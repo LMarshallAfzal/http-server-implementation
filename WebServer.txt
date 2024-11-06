@@ -1,0 +1,39 @@
+Core Features:
+
+- Async I/O: Efficiently handle multiple concurrent connections.
+- HTTP/2 support: Leverage HTTP/2's features for faster performance and reduced latency.
+- WebSockets: Enable real-time, bidirectional communication between the server and clients.
+- SSL/TLS: Secure communication using encryption.
+- Compression: Compress responses to reduce bandwidth usage and improve performance.
+
+Advanced Features:
+- Caching: Implement caching strategies to reduce server loda and improve response times.
+- Load Balancing: Distribute traffic across multiple servers to enhance scalability.
+- Session Management: Manage user sessions to maintain state between requests.
+- Authentication and Authorisation: Implement mechanisms to authenticate users and controle access to resources.
+- Security Headers: Set appropriate security headers to protect against common web attacks.
+- Error handling and Logging: Log errors and exceptions for debugging and analysis.
+- Performance Optimisation: Continuously monitor and optimise server performance.
+- Monitoring and Metrics: Track server metrics like request rates, response times, and error rates.
+- Deployment and Configuration Management: Use tools like Docker and Kubernetes for easy deployment and configuration.
+
+As I am implementing this manually without a pre built framework there are key component to consider.
+1. Socket Programming
+    - Create a server socket to listen on a specific port.
+    - Accept incomin client connections.
+    - Use Socket objects to communicate with clients.
+2. HTTP Protocol handling
+    - Parse incoming HTTP requests, including the method, URL, headers, and body.
+    - Construct and send HTTP responses, including status codes, headers, and body.
+3. Request Routing
+    - Implement a mechanism to map incoming URLS to specific handlers.
+    - Use regular expressions or other techniques to match URL patterns.
+4. Asynchronous I/O
+    - Use NIO or other asynchronous techniques to handle multiple concurrent connections efficiently.
+    - Consider usinga thread pool to manage worker threads.
+5. Error handling
+    - Implement error handling to gracefully handle exceptions and send appropriate error responses.
+    - Log errors for debugging and analysis.
+6. Security
+    - Implement security measures like input validation, output encoding, and HTTPS.
+    - Protect against common web vulnerabilities like XSS, CSRF, and SQL injection.
