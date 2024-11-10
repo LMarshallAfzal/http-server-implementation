@@ -37,3 +37,15 @@ As I am implementing this manually without a pre built framework there are key c
 6. Security
     - Implement security measures like input validation, output encoding, and HTTPS.
     - Protect against common web vulnerabilities like XSS, CSRF, and SQL injection.
+
+Acceptor:
+- Equivalent terms: Listener, server socket.
+- Core function: Listens on a specific port for incoming connections.
+
+Processor:
+- Equivalent terms: Request handler, worker thread, task
+- Core function: Handles incoming request, processes them, and generates responses.
+
+Responder:
+- Equivalent terms: Response sender.
+- Core function: Sends the generated response back to the client.
