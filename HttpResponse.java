@@ -13,12 +13,14 @@ public class HttpResponse {
         this.protocolVersion = protocolVersion;
         this.urlPath = urlPath;
         this.body = body;
+        this.headers = headers;
     }
 
     public HttpResponse(String statusCode, String protocolVersion, String urlPath, HashMap<String, String> headers) {
         this.statusCode = statusCode;
         this.protocolVersion = protocolVersion;
         this.urlPath = urlPath;
+        this.headers = headers;
     }
 
     public String getStatusCode() {

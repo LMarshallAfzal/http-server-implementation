@@ -6,7 +6,7 @@ import java.util.HashMap;
 
 public class Processor {
 
-    public void parseRequest(InputStream input) throws IOException {
+    public HttpResponse parseRequest(InputStream input) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(input));
         String line;
 
@@ -24,52 +24,48 @@ public class Processor {
         }
 
         HttpResponse response = new HttpResponse(method, protocolVersion, urlPath, headers);
-        processRequest(response);
+
+
+        return response;
     }
 
-    private void processRequest(HttpResponse response) {
+    public HttpResponse processRequest(HttpResponse response) {
         switch(response.getStatusCode()) {
             case "GET":
                 // String[] urlParts = response.getUrlPath().split("\\?");
-                // String path = urlParts[0];
 
                 // if (urlParts.length > 1) {
                 //     String queryString = urlParts[1];
                 //     HashMap<String, String> parameters = parseQueryString(queryString);
                 // }
-                System.out.println("This is a get request");
-                generateResponse(response);
-                break;
+
+                return generateResponse(response);
             case "POST":
             case "PUT":
             case "PATCH":
             case "DELETE":                
-
         }
+
+        return response;
+    }
+    
+    private HashMap<String, String> parseQueryString(String queryString) {
+        HashMap<String, String> parameters = new HashMap<>();
+        for (String keyValue : queryString.split("&")) {
+            String[] parts = keyValue.split("=");
+            if (parts.length == 2) {
+                parameters.put(parts[0], parts[1]);
+            }
+        }
+        return parameters;
     }
 
-    public HttpResponse generateResponse(HttpResponse response) {
+    private HttpResponse generateResponse(HttpResponse response) {
         if (response.getUrlPath().equals("/")) {
             response.setStatusCode("200 OK");
             response.setBody("Successful GET Request");
-        }
 
-        System.out.println(response.getBody());
-        
+        }
         return response;
     }
-
-    // private HashMap<String, String> parseQueryString(String queryString) {
-    //     HashMap<String, String> parameters = new HashMap<>();
-    //     for (String keyValue : queryString.split("&")) {
-    //         String[] parts = keyValue.split("=");
-    //         if (parts.length == 2) {
-    //             parameters.put(parts[0], parts[1]);
-    //         }
-    //     }
-    //     return parameters;
-    // }
-
-   
-    
 }

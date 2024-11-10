@@ -3,42 +3,25 @@
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-
 
 public class Acceptor {
     private ServerSocket serverSocket;
+    private Socket clientSocket;
 
     public Acceptor() throws IOException {
         serverSocket = new ServerSocket(8080);
+        clientSocket = null;
         System.out.println("Server listening on port 8080");
     }
 
-    public void acceptConnections() throws IOException {
-        while (true) {
+    public Socket getClientSocket() {
+        return clientSocket;
+    }
 
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress());
-
-            new Thread(() -> {
-                try {
-                    Processor processor = new Processor();
-                    processor.parseRequest(clientSocket.getInputStream());
-                    clientSocket.close();
-
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        clientSocket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-        }
+    public Socket acceptConnections() throws IOException {
+        clientSocket = serverSocket.accept();
+        System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress());
+        return clientSocket;
     }
 
     public void close() throws IOException {
