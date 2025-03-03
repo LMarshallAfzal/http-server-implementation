@@ -1,5 +1,3 @@
-// Listens on a specific port for incoming connections
-// Accepts incoming connection requests and creates new sockets for each client.
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
