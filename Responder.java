@@ -41,7 +41,7 @@ public class Responder {
             sb.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
         }
 
-        sb.append("\r\n");
+        sb.append("\r\n\n");
         sb.append(response.getBody());
 
         System.out.println(sb);
