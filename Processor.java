@@ -54,71 +54,191 @@ public class Processor {
     }
 
     /**
-     * Processes an HTTP request and generates a response.
+     * Processes an HTTP request and routes it to the appropriate system, network, hardware, or utility endpoint.
      * 
-     * <p>This method determines the appropriate action based on the HTTP method
-     * stored in the statusCode field of the HttpResponse. Currently, only GET
-     * requests to the root path ("/") are fully implemented.</p>
+     * This method handles different URL paths and HTTP methods, executing system commands 
+     * to retrieve various types of system information. It supports GET requests for multiple 
+     * endpoints related to system diagnostics and monitoring.
      * 
-     * @param response the HttpResponse object containing the parsed request information
-     * @return an HttpResponse object containing the response to be sent back to the client
+     * Supported endpoints include:
+     * <ul>
+     *   <li>/: Root endpoint with basic response</li>
+     *   <li>/system/info: Operating system release information</li>
+     *   <li>/system/memory: Memory usage details</li>
+     *   <li>/system/disk: Disk space information</li>
+     *   <li>/network/iface: Network interface details</li>
+     *   <li>/network/ip: IP route information</li>
+     *   <li>/network/ping: Network connectivity test</li>
+     *   <li>/hardware/cpu: CPU usage statistics</li>
+     *   <li>/hardware/load: System load average</li>
+     *   <li>/hardware/processes: Running processes list</li>
+     *   <li>/util/time: System time and date information</li>
+     *   <li>/util/logs: Recent system logs</li>
+     *   <li>/health: Comprehensive system health overview</li>
+     * </ul>
+     * 
+     * For unsupported HTTP methods, a 405 Method Not Allowed status is returned.
+     * For unrecognized paths, a 404 Not Found status is returned.
+     * 
+     * @param response The HttpResponse object containing request details and to be populated with response data
+     * @return The modified HttpResponse object with status code, body, and other relevant information
      */
     public HttpResponse processRequest(HttpResponse response) {
-        switch(response.getStatusCode()) {
-            case "GET":
-                // String[] urlParts = response.getUrlPath().split("\\?");
-
-                // if (urlParts.length > 1) {
-                //     String queryString = urlParts[1];
-                //     HashMap<String, String> parameters = parseQueryString(queryString);
-                // }
-
-                return generateResponse(response);
-            case "POST":
-            case "PUT":
-            case "PATCH":
-            case "DELETE":                
+        switch(response.getUrlPath()) {
+            case "/":
+                if (response.getStatusCode().equals("GET")) {
+                    response.setStatusCode("200 OK");
+                    response.setBody("Successful GET Request");
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/system/info":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder systemInfo = new ProcessBuilder("cat", "/etc/os-release");
+                    executeCommand(systemInfo, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/system/memory":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder memoryInfo = new ProcessBuilder("free", "-m");
+                    executeCommand(memoryInfo, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/system/disk":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder diskSpace = new ProcessBuilder("df", "-h");
+                    executeCommand(diskSpace, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                };
+                break;
+            case "/network/iface":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder networkInterface = new ProcessBuilder("ip", "addr");
+                    executeCommand(networkInterface, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/network/ip":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder ipAddress = new ProcessBuilder("ip", "route get 1");
+                    executeCommand(ipAddress, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/network/ping":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder ping = new ProcessBuilder("ping", "-c 4 8.8.8.8");
+                    executeCommand(ping, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/hardware/cpu":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder cpu = new ProcessBuilder("top", "-bn1 | grep \"Cpu(s)\"");
+                    executeCommand(cpu, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/hardware/load":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder load = new ProcessBuilder("cat", "/proc/loadavg");
+                    executeCommand(load, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/hardware/processes":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder proc = new ProcessBuilder("ps", "aux");
+                    executeCommand(proc, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/util/time":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder time = new ProcessBuilder("timedatectl");
+                    executeCommand(time, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/util/logs":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder logs = new ProcessBuilder("journalctl", "-n 50");
+                    executeCommand(logs, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            case "/health":
+                if (response.getStatusCode().equals("GET")) {
+                    ProcessBuilder systemHealth = new ProcessBuilder("bash", "-c", "uptime && free -h && df -h && top -bn1 | grep 'Cpu(s)'");
+                    executeCommand(systemHealth, response);
+                } else {
+                    response.setStatusCode("405 Method Not Allowed");
+                    response.setBody("Method not supported");
+                }
+                break;
+            default:
+                response.setStatusCode("404 NOT FOUND");
+                response.setBody("Cannot find what you are looking for.");        
         }
 
         return response;
     }
 
     /**
-     * Parses a query string into a map of parameter name-value pairs.
+     * Executes a system command and processes its output.
      * 
-     * <p>This method splits the query string on '&' characters to separate
-     * individual parameters, then splits each parameter on '=' to separate
-     * the name and value.</p>
+     * <p>This method performs the following operations:</p>
+     * <ul>
+     *   <li>Starts the specified system command using ProcessBuilder</li>
+     *   <li>Reads the command's output stream line by line</li>
+     *   <li>Captures the entire output in a StringBuilder</li>
+     *   <li>Sets the HTTP response status to 200 OK on successful execution</li>
+     *   <li>Sets the response body to the command's output</li>
+     * </ul>
      * 
-     * @param queryString the query string to parse (e.g., "name=value&key=data")
-     * @return a HashMap mapping parameter names to their values
+     * @param command The ProcessBuilder containing the system command to execute
+     * @param response the HttpResponse object containing response information
      */
-    private HashMap<String, String> parseQueryString(String queryString) {
-        HashMap<String, String> parameters = new HashMap<>();
-        for (String keyValue : queryString.split("&")) {
-            String[] parts = keyValue.split("=");
-            if (parts.length == 2) {
-                parameters.put(parts[0], parts[1]);
+    private void executeCommand(ProcessBuilder command, HttpResponse response) {
+        try {
+            Process process = command.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
             }
-        }
-        return parameters;
-    }
-
-    /**
-     * Generates an HTTP response for the given request.
-     * 
-     * <p>Currently, this method only handles requests to the root path ("/"),
-     * for which it generates a 200 OK response with a simple message.</p>
-     * 
-     * @param response the HttpResponse object containing the parsed request information
-     * @return an HttpResponse object with the appropriate status code and body
-     */
-    private HttpResponse generateResponse(HttpResponse response) {
-        if (response.getUrlPath().equals("/")) {
             response.setStatusCode("200 OK");
-            response.setBody("Successful GET Request");
-
+            response.setBody(sb.toString());
+        } catch (IOException e) {
+            response.setStatusCode("500 Internal Server Error");
+            response.setBody("Error retrieving system information");
         }
-        return response;
     }
 }
