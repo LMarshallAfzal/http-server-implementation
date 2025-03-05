@@ -49,7 +49,6 @@ public class Processor {
 
         HttpResponse response = new HttpResponse(method, protocolVersion, urlPath, headers);
 
-
         return response;
     }
 
@@ -86,7 +85,7 @@ public class Processor {
     public HttpResponse processRequest(HttpResponse response) {
         switch(response.getUrlPath()) {
             case "/":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     response.setStatusCode("200 OK");
                     response.setBody("Successful GET Request");
                 } else {
@@ -95,7 +94,7 @@ public class Processor {
                 }
                 break;
             case "/system/info":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder systemInfo = new ProcessBuilder("cat", "/etc/os-release");
                     executeCommand(systemInfo, response);
                 } else {
@@ -104,7 +103,7 @@ public class Processor {
                 }
                 break;
             case "/system/memory":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder memoryInfo = new ProcessBuilder("free", "-m");
                     executeCommand(memoryInfo, response);
                 } else {
@@ -113,7 +112,7 @@ public class Processor {
                 }
                 break;
             case "/system/disk":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder diskSpace = new ProcessBuilder("df", "-h");
                     executeCommand(diskSpace, response);
                 } else {
@@ -122,7 +121,7 @@ public class Processor {
                 };
                 break;
             case "/network/iface":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder networkInterface = new ProcessBuilder("ip", "addr");
                     executeCommand(networkInterface, response);
                 } else {
@@ -131,7 +130,7 @@ public class Processor {
                 }
                 break;
             case "/network/ip":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder ipAddress = new ProcessBuilder("ip", "route get 1");
                     executeCommand(ipAddress, response);
                 } else {
@@ -140,7 +139,7 @@ public class Processor {
                 }
                 break;
             case "/network/ping":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder ping = new ProcessBuilder("ping", "-c 4 8.8.8.8");
                     executeCommand(ping, response);
                 } else {
@@ -149,7 +148,7 @@ public class Processor {
                 }
                 break;
             case "/hardware/cpu":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder cpu = new ProcessBuilder("top", "-bn1 | grep \"Cpu(s)\"");
                     executeCommand(cpu, response);
                 } else {
@@ -158,7 +157,7 @@ public class Processor {
                 }
                 break;
             case "/hardware/load":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder load = new ProcessBuilder("cat", "/proc/loadavg");
                     executeCommand(load, response);
                 } else {
@@ -167,7 +166,7 @@ public class Processor {
                 }
                 break;
             case "/hardware/processes":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder proc = new ProcessBuilder("ps", "aux");
                     executeCommand(proc, response);
                 } else {
@@ -176,7 +175,7 @@ public class Processor {
                 }
                 break;
             case "/util/time":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder time = new ProcessBuilder("timedatectl");
                     executeCommand(time, response);
                 } else {
@@ -185,7 +184,7 @@ public class Processor {
                 }
                 break;
             case "/util/logs":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder logs = new ProcessBuilder("journalctl", "-n 50");
                     executeCommand(logs, response);
                 } else {
@@ -194,7 +193,7 @@ public class Processor {
                 }
                 break;
             case "/health":
-                if (response.getStatusCode().equals("GET")) {
+                if (response.getMethod().equals("GET")) {
                     ProcessBuilder systemHealth = new ProcessBuilder("bash", "-c", "uptime && free -h && df -h && top -bn1 | grep 'Cpu(s)'");
                     executeCommand(systemHealth, response);
                 } else {

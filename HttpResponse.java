@@ -9,6 +9,7 @@ import java.util.HashMap;
  * after processing their HTTP request.<p>
  */
 public class HttpResponse {
+    private String method;
     private String statusCode;
     private String protocolVersion;
     private String urlPath;
@@ -19,14 +20,14 @@ public class HttpResponse {
     /**
      * Constructs a complete HTTP response with all components.
      * 
-     * @param statusCode the HTTP status code and reason phrase (e.g., "200 OK")
+     * @param method the HTTP method (e.g., "GET")
      * @param protocolVersion the HTTP protocol version (e.g., "HTTP/1.1")
      * @param urlPath the requested URL path
      * @param headers a map of HTTP headers (name-value pairs)
      * @param body body the respose body content
      */
-    public HttpResponse(String statusCode, String protocolVersion, String urlPath, HashMap<String, String> headers, String body) {
-        this.statusCode = statusCode;
+    public HttpResponse(String method, String protocolVersion, String urlPath, HashMap<String, String> headers, String body) {
+        this.method = method;
         this.protocolVersion = protocolVersion;
         this.urlPath = urlPath;
         this.body = body;
@@ -36,16 +37,34 @@ public class HttpResponse {
     /**
      * Constructs HTTP response without a body.
      * 
-     * @param statusCode the HTTP status code and reason phrase (e.g., "200 OK")
+     * @param method the HTTP method (e.g., "GET")
      * @param protocolVersion the HTTP protocol version (e.g., "HTTP/1.1")
      * @param urlPath the requested URL path
      * @param headers a map of HTTP headers (name-value pairs)
      */
-    public HttpResponse(String statusCode, String protocolVersion, String urlPath, HashMap<String, String> headers) {
-        this.statusCode = statusCode;
+    public HttpResponse(String method, String protocolVersion, String urlPath, HashMap<String, String> headers) {
+        this.method = method;
         this.protocolVersion = protocolVersion;
         this.urlPath = urlPath;
         this.headers = headers;
+    }
+
+    /**
+     * Gets the HTTP method.
+     * 
+     * @return the method string
+     */
+    public String getMethod() {
+        return method;
+    }
+
+    /**
+     * Sets the HTTP method.
+     * 
+     * @param method the method to set
+     */
+    public void setMethod(String method) {
+        this.method = method;
     }
 
     /**

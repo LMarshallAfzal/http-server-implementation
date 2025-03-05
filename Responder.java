@@ -35,7 +35,8 @@ public class Responder {
      */
     public void sendResponse(HttpResponse response, OutputStream outputStream) throws IOException {
         StringBuilder sb = new StringBuilder();
-        sb.append(response.getProtocolVersion()).append(" ").append(response.getStatusCode()).append("\r\n");
+        String endpoint = response.getUrlPath().substring(response.getUrlPath().indexOf('/'));
+        sb.append(response.getMethod()).append(" ").append(response.getStatusCode()).append(" ").append(response.getProtocolVersion()).append(" ").append(endpoint).append(" ").append("\r\n");
 
         for (Map.Entry<String, String> header : response.getHeaders().entrySet()) {
             sb.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
