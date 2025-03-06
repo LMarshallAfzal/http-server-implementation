@@ -1,4 +1,3 @@
-package src.main.java;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -216,7 +215,7 @@ public class Processor {
      * <p>This method performs the following operations:</p>
      * <ul>
      *   <li>Starts the specified system command using ProcessBuilder</li>
-     *   <li>Reads the command's output stream line by line</li>
+     *   <li>Reads the command's output stream, line by line</li>
      *   <li>Captures the entire output in a StringBuilder</li>
      *   <li>Sets the HTTP response status to 200 OK on successful execution</li>
      *   <li>Sets the response body to the command's output</li>
@@ -228,17 +227,30 @@ public class Processor {
     private void executeCommand(ProcessBuilder command, HttpResponse response) {
         try {
             Process process = command.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append("\n");
+            int exitCode = process.waitFor();
+
+            if (exitCode == 0) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line).append("\n");
+                }
+                response.setStatusCode("200 OK");
+                response.setBody(sb.toString());
+            } else {
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                StringBuilder errorSb = new StringBuilder();
+                String errorLine;
+                while ((errorLine = errorReader.readLine()) != null) {
+                    errorSb.append(errorLine).append("\n");
+                }
+                response.setStatusCode("500 Internal Server Error");
+                response.setBody("Command failed " + errorSb);
             }
-            response.setStatusCode("200 OK");
-            response.setBody(sb.toString());
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             response.setStatusCode("500 Internal Server Error");
-            response.setBody("Error retrieving system information");
+            response.setBody("Error executing command: " + e.getMessage());
         }
     }
 }
