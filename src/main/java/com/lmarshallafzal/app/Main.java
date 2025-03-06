@@ -1,5 +1,11 @@
+package com.lmarshallafzal.app;
 import java.io.IOException;
 import java.net.Socket;
+
+import src.main.java.Acceptor;
+import src.main.java.HttpResponse;
+import src.main.java.Processor;
+import src.main.java.Responder;
 
 /**
  * The Main class is the entry point for the HTTP server application.

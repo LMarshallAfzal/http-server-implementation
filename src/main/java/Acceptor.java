@@ -1,3 +1,4 @@
+package src.main.java;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
