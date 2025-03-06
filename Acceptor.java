@@ -48,7 +48,7 @@ public class Acceptor {
      */
     public Socket acceptConnections() throws IOException {
         clientSocket = serverSocket.accept();
-        System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress());
+        System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress() + "\n");
         return clientSocket;
     }
 
