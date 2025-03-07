@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.*;
 
+import src.main.java.Acceptor;
+
 import java.net.*;
 import java.io.IOException;
 import java.util.ArrayList;
