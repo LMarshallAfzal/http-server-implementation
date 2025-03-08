@@ -32,11 +32,17 @@ public class Processor {
      * @throws IOException if an I/O error occurs while reading from the input stream
      */
     public HttpResponse parseRequest(InputStream input) throws IOException {
+        System.out.println("Input Stream: " + input);
         BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-        String line;
+        String line = reader.readLine();
 
         line = reader.readLine();
         String[] parts = line.split("\\s+");
+
+        // Check if we have all required parts of the request line
+        if (parts.length < 3) {
+            throw new IOException("Malformed HTTP request line");
+        }
         
         String method = parts[0];
         String urlPath = parts[1];
