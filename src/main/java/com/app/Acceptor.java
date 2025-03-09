@@ -33,15 +33,6 @@ public class Acceptor {
     }
 
     /**
-     * Return the current client socket.
-     * 
-     * @return the current Socket connecton to the client, or null if no client is connected 
-     */
-    public Socket getClientSocket() {
-        return clientSocket;
-    }
-
-    /**
      * Blocks until a client connects to the server, then returns the new client socket.
      * This method updates the internal clientSocket reference.
      * 

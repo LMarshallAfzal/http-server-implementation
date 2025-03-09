@@ -70,7 +70,6 @@ public class ProcessorTest {
         }, "Empty request should throw an NullPointerException.");
     }
 
-    // TODO: throws index out of bounds exception instead of no protocol version exception
     @Test
     void testParseRequest_RequestWithNoProtocolVersion() {
         String httpRequest = "GET /test\r\n" +
