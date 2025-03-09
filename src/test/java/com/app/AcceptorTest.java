@@ -1,18 +1,18 @@
+package com.app;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-import src.main.java.Acceptor;
 
 import java.net.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class AcceptorTest {
     private Acceptor acceptor;
@@ -173,6 +173,66 @@ public class AcceptorTest {
             clientSocket.close();
         }, "Connection should fail after server socket is closed");
 
+    }
+
+    @Test
+    void testClose_StopsAcceptingConnections() throws IOException {
+        acceptor = new Acceptor();
+
+        acceptor.close();
+
+        assertThrows(ConnectException.class, () -> {
+            Socket clientSocket = new Socket(InetAddress.getLocalHost(), 8080);
+            clientSocket.close();
+        }, "Connection should fail after server socket is closed");
+    }
+
+    @Test
+    void testClose_InterruptAcceptMethod() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        acceptor = new Acceptor();
+
+        Future<?> acceptFuture = executor.submit(() -> {
+            try {
+                acceptor.acceptConnections();
+                fail("Should not reach here because socket is closed");
+            } catch (IOException e) {
+                assertTrue(e.getMessage().contains("closed") ||
+                                     e.getMessage().contains("accept") ||
+                                     e.getMessage().contains("interrupted"),
+                                    "Exception message should indicate socket was closed: " + e.getMessage());
+
+            }
+        });
+
+        Thread.sleep(200);
+        acceptor.close();
+        acceptFuture.get(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void testClose_CanBeCalledMultipleTimes() throws IOException {
+        acceptor = new Acceptor();
+        acceptor.close();
+
+        assertDoesNotThrow(() -> acceptor.close());
+    }
+
+    @Test
+    void testClose_ReleasesPort() throws IOException {
+        acceptor = new Acceptor();
+        acceptor.close();
+
+        Acceptor newAcceptor = null;
+        try {
+            newAcceptor = new Acceptor();
+            assertTrue(true);
+        } catch (IOException e) {
+            fail("Failed to create a new Acceptor. Port may not have been released: " + e.getMessage());
+        } finally {
+            if (newAcceptor != null) {
+                newAcceptor.close();
+            }
+        }
     }
 }
 

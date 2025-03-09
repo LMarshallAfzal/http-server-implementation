@@ -1,10 +1,11 @@
-package src.main.java;
+package com.app;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
 
 /**
- * The Acceptor class handles incoming network connections for the HTTP server.
+ * The com.app.Acceptor class handles incoming network connections for the HTTP server.
  * It manages a server socket that listens on a specified port (8080) and accepts
  * incoming client connection requests.
  * 
@@ -21,7 +22,7 @@ public class Acceptor {
     private Socket clientSocket;
 
     /**
-     * Constructs an Acceptor that listens on port 8080.
+     * Constructs an com.app.Acceptor that listens on port 8080.
      * 
      * @throws IOException IOException if the server socket cannot be created or bound to port 8080.
      */
@@ -41,7 +42,7 @@ public class Acceptor {
     }
 
     /**
-     * Blocks unil a client connects to the server, then returns the new client socket.
+     * Blocks until a client connects to the server, then returns the new client socket.
      * This method updates the internal clientSocket reference.
      * 
      * @return a Socket connected to the client
