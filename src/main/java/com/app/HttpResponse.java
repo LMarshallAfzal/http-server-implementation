@@ -1,8 +1,9 @@
-package src.main.java;
+package com.app;
+
 import java.util.HashMap;
 
 /**
- * The HttpResponse class represents an HTTP response message.
+ * The com.app.HttpResponse class represents an HTTP response message.
  * It encapsulates all the components of an HTTP response including status code,
  * protocol version, headers, and body content.
  * 
