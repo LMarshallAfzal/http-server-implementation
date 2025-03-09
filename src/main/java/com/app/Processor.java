@@ -1,4 +1,5 @@
-package src.main.java;
+ package com.app;
+
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -6,7 +7,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 
 /**
- * The Processor class handles HTTP request parsing and processing.
+ * The com.app.Processor class handles HTTP request parsing and processing.
  * It reads the incoming HTTP request, extracts relevant information,
  * and generates an appropriate HTTP response.
  * 
@@ -32,11 +33,13 @@ public class Processor {
      * @throws IOException if an I/O error occurs while reading from the input stream
      */
     public HttpResponse parseRequest(InputStream input) throws IOException {
-        System.out.println("Input Stream: " + input);
         BufferedReader reader = new BufferedReader(new InputStreamReader(input));
         String line = reader.readLine();
 
-        line = reader.readLine();
+        if (line == null || line.trim().isEmpty()) {
+            throw new IOException("Empty or invalid HTTP request");
+        }
+
         String[] parts = line.split("\\s+");
 
         // Check if we have all required parts of the request line
@@ -50,8 +53,14 @@ public class Processor {
 
         HashMap<String, String> headers = new HashMap<>();
         while ((line = reader.readLine()) != null && !line.isEmpty()) {
-            String[] headerParts = line.split(":");
-            headers.put(headerParts[0].trim(), headerParts[1].trim());
+            int colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+                String key = line.substring(0, colonIndex).trim();
+                String value = line.substring(colonIndex + 1).trim();
+                headers.put(key, value);
+            } else {
+                throw new IOException("Malformed HTTP header: " + line);
+            }
         }
 
         HttpResponse response = new HttpResponse(method, protocolVersion, urlPath, headers);
@@ -86,8 +95,8 @@ public class Processor {
      * For unsupported HTTP methods, a 405 Method Not Allowed status is returned.
      * For unrecognized paths, a 404 Not Found status is returned.
      * 
-     * @param response The HttpResponse object containing request details and to be populated with response data
-     * @return The modified HttpResponse object with status code, body, and other relevant information
+     * @param response The com.app.HttpResponse object containing request details and to be populated with response data
+     * @return The modified com.app.HttpResponse object with status code, body, and other relevant information
      */
     public HttpResponse processRequest(HttpResponse response) {
         switch(response.getUrlPath()) {
@@ -229,7 +238,7 @@ public class Processor {
      * </ul>
      * 
      * @param command The ProcessBuilder containing the system command to execute
-     * @param response the HttpResponse object containing response information
+     * @param response the com.app.HttpResponse object containing response information
      */
     private void executeCommand(ProcessBuilder command, HttpResponse response) {
         try {
