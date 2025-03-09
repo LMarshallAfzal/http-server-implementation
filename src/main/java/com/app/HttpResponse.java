@@ -3,7 +3,7 @@ package com.app;
 import java.util.HashMap;
 
 /**
- * The com.app.HttpResponse class represents an HTTP response message.
+ * The HttpResponse class represents an HTTP response message.
  * It encapsulates all the components of an HTTP response including status code,
  * protocol version, headers, and body content.
  * 
@@ -22,11 +22,11 @@ public class HttpResponse {
     /**
      * Constructs a complete HTTP response with all components.
      * 
-     * @param method the HTTP method (e.g., "GET")
+     * @param method the HTTP method (e.g., "POST")
      * @param protocolVersion the HTTP protocol version (e.g., "HTTP/1.1")
      * @param urlPath the requested URL path
      * @param headers a map of HTTP headers (name-value pairs)
-     * @param body body the respose body content
+     * @param body the response body content
      */
     public HttpResponse(String method, String protocolVersion, String urlPath, HashMap<String, String> headers, String body) {
         this.method = method;

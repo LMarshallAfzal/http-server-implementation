@@ -30,7 +30,7 @@ public class Responder {
      * [BODY]
      * </pre>
      * 
-     * @param response the com.app.HttpResponse object containing the response information
+     * @param response the HttpResponse object containing the response information
      * @param outputStream the OutputStream to write the formatted response to
      * @throws IOException if an I/O error occurs while writing to the output stream
      */
