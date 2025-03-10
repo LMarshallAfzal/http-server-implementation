@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+import java.io.File;
 import java.net.*;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,11 +33,46 @@ public class AcceptorTest {
     }
 
     @Test
-    void testConstructor_SuccessfulInitialization() {
+    void testConstructor_SuccessfulInitialization_NoSSL() {
         assertDoesNotThrow(() -> {
-            acceptor = new Acceptor();
+            acceptor = new Acceptor(false);
         }, "Constructor should initialize ServerSocket without exceptions.");
+    }
 
+    @Test
+    void testConstructor_SuccessfulInitialization_WithSSL() {
+        assertDoesNotThrow(() -> {
+            acceptor = new Acceptor(true);
+        }, "Constructor should initialize ServerSocket without exceptions.");
+    }
+
+    @Test
+    void testConstructor_UnsuccessfulInitialization_WithSSL() {
+        File originalKeystore = new File("keystore.jks");
+        File tempFile = new File("keystore.jks.temp");
+
+        boolean keystoreExists = originalKeystore.exists();
+        boolean renamed = false;
+
+        try {
+            if (keystoreExists) {
+                renamed = originalKeystore.renameTo(tempFile);
+                assertTrue(renamed, "Failed to temporarily rename keystore for testing");
+                assertFalse(originalKeystore.exists(), "Keystore file should not exist after renaming");
+            }
+
+            IOException exception = assertThrows(IOException.class, () -> {
+                new Acceptor(true);
+            }, "Constructor should throw IOException when keystore is not found.");
+
+            assertTrue(exception.getMessage().contains("Keystore file"),
+                    "Exception message should indicate keystore file not found");
+        } finally {
+            if (keystoreExists && renamed) {
+                tempFile.renameTo(originalKeystore);
+                assertTrue(originalKeystore.exists(), "Failed to restore keystore after test");
+            }
+        }
     }
 
     @Test
@@ -60,7 +96,7 @@ public class AcceptorTest {
     @Test
     @Timeout(5)
     void testAcceptConnections_SuccessfulConnection() throws Exception {
-        acceptor = new Acceptor();
+        acceptor = new Acceptor(false);
         Future<?> serverFuture = executor.submit(() -> {
             try {
                 Socket clientSocket = acceptor.acceptConnections();
@@ -85,7 +121,7 @@ public class AcceptorTest {
     @Timeout(10)
     void testAcceptConnections_MultipleConnections() throws Exception {
         final int NUM_CONNECTIONS = 3;
-        acceptor = new Acceptor();
+        acceptor = new Acceptor(false);
 
         List<Socket> acceptedSockets = new ArrayList<>();
 
@@ -124,7 +160,7 @@ public class AcceptorTest {
 
     @Test
     void testAcceptConnections_Interrupted_ThrowsException() throws Exception {
-        acceptor = new Acceptor();
+        acceptor = new Acceptor(false);
 
         Thread serverThread = new Thread(() -> {
             try {
@@ -152,7 +188,7 @@ public class AcceptorTest {
 
     @Test
     void testAcceptConnections_SocketClosed_ThrowsException() throws Exception {
-        acceptor = new Acceptor();
+        acceptor = new Acceptor(false);
 
         Future<?> serverFuture = executor.submit(() -> {
             try {
@@ -177,7 +213,7 @@ public class AcceptorTest {
 
     @Test
     void testClose_StopsAcceptingConnections() throws IOException {
-        acceptor = new Acceptor();
+        acceptor = new Acceptor(false);
 
         acceptor.close();
 
@@ -189,7 +225,7 @@ public class AcceptorTest {
 
     @Test
     void testClose_InterruptAcceptMethod() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        acceptor = new Acceptor();
+        acceptor = new Acceptor(false);
 
         Future<?> acceptFuture = executor.submit(() -> {
             try {
@@ -211,7 +247,7 @@ public class AcceptorTest {
 
     @Test
     void testClose_CanBeCalledMultipleTimes() throws IOException {
-        acceptor = new Acceptor();
+        acceptor = new Acceptor(false);
         acceptor.close();
 
         assertDoesNotThrow(() -> acceptor.close());
@@ -219,12 +255,12 @@ public class AcceptorTest {
 
     @Test
     void testClose_ReleasesPort() throws IOException {
-        acceptor = new Acceptor();
+        acceptor = new Acceptor(false);
         acceptor.close();
 
         Acceptor newAcceptor = null;
         try {
-            newAcceptor = new Acceptor();
+            newAcceptor = new Acceptor(false);
             assertTrue(true);
         } catch (IOException e) {
             fail("Failed to create a new Acceptor. Port may not have been released: " + e.getMessage());

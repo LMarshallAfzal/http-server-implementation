@@ -16,7 +16,7 @@ public class Main {
     /**
      * The main method that starts the HTTP server.
      * 
-     * <p>It creates an com.app.Acceptor to listen on port 8080 and enters an infinite loop
+     * <p>It creates a com.app.Acceptor to listen on port 8080 and enters an infinite loop
      * to accept incoming connections. For each connection, it creates a new thread
      * that processes the request and sends a response.</p>
      * 
@@ -24,29 +24,37 @@ public class Main {
      * @throws IOException if an I/O error occurs when creating the com.app.Acceptor
      */
     public static void main(String[] args) throws IOException {
-        Acceptor acceptor = new Acceptor();
+        boolean enableSSL = args.length > 0 && args[0].equalsIgnoreCase("--ssl");
 
-        while(true) {
-            Socket clientSocket = acceptor.acceptConnections();
+        try {
+            Acceptor acceptor = new Acceptor(enableSSL);
+            System.out.println("Server started " + (enableSSL ? "with SSL" : "without SSL"));
 
-            new Thread(() -> {
-                try {
-                    Processor processor = new Processor();
-                    HttpResponse response = processor.processRequest(processor.parseRequest(clientSocket.getInputStream()));
-                    
-                    Responder responder = new Responder();
-                    responder.sendResponse(response, clientSocket.getOutputStream());
+            while (true) {
+                Socket clientSocket = acceptor.acceptConnections();
 
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
+                new Thread(() -> {
                     try {
-                        clientSocket.close();
+                        Processor processor = new Processor();
+                        HttpResponse response = processor.processRequest(processor.parseRequest(clientSocket.getInputStream()));
+
+                        Responder responder = new Responder();
+                        responder.sendResponse(response, clientSocket.getOutputStream());
+
                     } catch (IOException e) {
                         e.printStackTrace();
+                    } finally {
+                        try {
+                            clientSocket.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
-            }).start();
+                }).start();
+            }
+        } catch (IOException e) {
+            System.err.println("Server failed to start: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
