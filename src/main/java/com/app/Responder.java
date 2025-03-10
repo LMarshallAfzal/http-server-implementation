@@ -38,11 +38,6 @@ public class Responder {
         StringBuilder sb = new StringBuilder();
         sb.append(response.getProtocolVersion()).append(" ").append(response.getStatusCode()).append("\r\n");
 
-        sb.append("Content-Type: text/plain").append("\r\n");
-        if (response.getBody() != null) {
-            sb.append("Content-Length: ").append(response.getBody().getBytes(StandardCharsets.UTF_8).length).append("\r\n");
-        }
-
         for (Map.Entry<String, String> header : response.getHeaders().entrySet()) {
             sb.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
         }

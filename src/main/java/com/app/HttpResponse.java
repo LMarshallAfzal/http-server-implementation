@@ -1,5 +1,8 @@
 package com.app;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 
 /**
@@ -11,62 +14,48 @@ import java.util.HashMap;
  * after processing their HTTP request.<p>
  */
 public class HttpResponse {
-    private String method;
     private String statusCode;
-    private String protocolVersion;
-    private String urlPath;
-    private String message;
+    private final String protocolVersion;
     private HashMap<String, String> headers;
     private String body;
 
     /**
      * Constructs a complete HTTP response with all components.
      * 
-     * @param method the HTTP method (e.g., "POST")
      * @param protocolVersion the HTTP protocol version (e.g., "HTTP/1.1")
-     * @param urlPath the requested URL path
-     * @param headers a map of HTTP headers (name-value pairs)
      * @param body the response body content
      */
-    public HttpResponse(String method, String protocolVersion, String urlPath, HashMap<String, String> headers, String body) {
-        this.method = method;
+    public HttpResponse(String protocolVersion, String body) {
+        this.statusCode = "200 OK";
         this.protocolVersion = protocolVersion;
-        this.urlPath = urlPath;
         this.body = body;
-        this.headers = headers;
+
+        Instant nowUtc = Instant.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+        String date = formatter.format(nowUtc);
+
+        this.headers = new HashMap<>();
+        this.headers.put("Date", date);
+        this.headers.put("Content-Type", "text/plain");
+        this.headers.put("Content-Length", String.valueOf(body.getBytes(StandardCharsets.UTF_8).length));
     }
 
     /**
      * Constructs HTTP response without a body.
      * 
-     * @param method the HTTP method (e.g., "GET")
      * @param protocolVersion the HTTP protocol version (e.g., "HTTP/1.1")
-     * @param urlPath the requested URL path
-     * @param headers a map of HTTP headers (name-value pairs)
      */
-    public HttpResponse(String method, String protocolVersion, String urlPath, HashMap<String, String> headers) {
-        this.method = method;
+    public HttpResponse(String protocolVersion) {
+        this.statusCode = "200 OK";
         this.protocolVersion = protocolVersion;
-        this.urlPath = urlPath;
-        this.headers = headers;
-    }
 
-    /**
-     * Gets the HTTP method.
-     * 
-     * @return the method string
-     */
-    public String getMethod() {
-        return method;
-    }
+        Instant nowUtc = Instant.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+        String date = formatter.format(nowUtc);
 
-    /**
-     * Sets the HTTP method.
-     * 
-     * @param method the method to set
-     */
-    public void setMethod(String method) {
-        this.method = method;
+        this.headers = new HashMap<>();
+        this.headers.put("Date", date);
+        this.headers.put("Content-Type", "text/plain");
     }
 
     /**
@@ -97,51 +86,6 @@ public class HttpResponse {
     }
 
     /**
-     * Sets the HTTP protocol version.
-     * 
-     * @param protocolVersion the protocol version to set.
-     */
-    public void setProtocolVersion(String protocolVersion) {
-        this.protocolVersion = protocolVersion;
-    }
-
-    /**
-     * Gets the requested URL path.
-     * 
-     * @return  the URL path string
-     */
-    public String getUrlPath() {
-        return urlPath;
-    }
-
-    /**
-     * Sets the requested URL path.
-     * 
-     * @param urlPath the URL path to set
-     */
-    public void setUrlPath(String urlPath) {
-        this.urlPath = urlPath;
-    }
-
-    /**
-     * Gets the response message.
-     * 
-     * @return the message string
-     */
-    public String getMessage() {
-        return message;
-    }
-
-    /**
-     * Sets the response message.
-     * 
-     * @param message the message to set
-     */
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    /**
      * Gets the HTTP headers.
      * 
      * @return a map of header name-value pairs
@@ -151,12 +95,27 @@ public class HttpResponse {
     }
 
     /**
+     * Sets a new header to headers hashmap
+     *
+     * @param name the header name
+     * @param value the header value
+     */
+    public void setHeader(String name, String value) {
+        if (headers.containsKey(name) && name.equals("Content-Length")) {
+            this.headers.remove(name);
+            this.headers.put(name, value);
+        } else {
+            this.headers.put(name, value);
+        }
+    }
+
+    /**
      * Sets the HTTP headers.
      * 
      * @param headers a map of header name-value pairs
      */
     public void setHeaders(HashMap<String, String> headers) {
-        this.headers = headers;
+        this.headers.putAll(headers);
     }
 
     /**
@@ -175,5 +134,6 @@ public class HttpResponse {
      */
     public void setBody(String body) {
         this.body = body;
+        this.setHeader("Content-Length", String.valueOf(body.getBytes(StandardCharsets.UTF_8).length));
     }
 }

@@ -30,14 +30,14 @@ public class ProcessorTest {
                 "Accept: text/html\r\n\r\n";
 
         InputStream inputStream = new ByteArrayInputStream(httpRequest.getBytes(StandardCharsets.UTF_8));
-        HttpResponse response = processor.parseRequest(inputStream);
+        HttpRequest request = processor.parseRequest(inputStream);
 
-        assertEquals("GET", response.getMethod());
-        assertEquals("HTTP/1.1", response.getProtocolVersion());
-        assertEquals("/test", response.getUrlPath());
-        assertEquals("localhost:8080", response.getHeaders().get("Host"));
-        assertEquals("Mozilla/5.0", response.getHeaders().get("User-Agent"));
-        assertEquals("text/html", response.getHeaders().get("Accept"));
+        assertEquals("GET", request.getMethod());
+        assertEquals("HTTP/1.1", request.getProtocolVersion());
+        assertEquals("/test", request.getUrlPath());
+        assertEquals("localhost:8080", request.getRequestHeaders().get("Host"));
+        assertEquals("Mozilla/5.0", request.getRequestHeaders().get("User-Agent"));
+        assertEquals("text/html", request.getRequestHeaders().get("Accept"));
     }
 
     @Test
@@ -48,14 +48,14 @@ public class ProcessorTest {
                 "Content-Length: 0\r\n\r\n";
 
         InputStream inputStream = new ByteArrayInputStream(httpRequest.getBytes(StandardCharsets.UTF_8));
-        HttpResponse response = processor.parseRequest(inputStream);
+        HttpRequest request = processor.parseRequest(inputStream);
 
-        assertEquals("POST", response.getMethod());
-        assertEquals("HTTP/1.1", response.getProtocolVersion());
-        assertEquals("/api/data", response.getUrlPath());
-        assertEquals("localhost:8080", response.getHeaders().get("Host"));
-        assertEquals("application/json", response.getHeaders().get("Content-Type"));
-        assertEquals("0", response.getHeaders().get("Content-Length"));
+        assertEquals("POST", request.getMethod());
+        assertEquals("HTTP/1.1", request.getProtocolVersion());
+        assertEquals("/api/data", request.getUrlPath());
+        assertEquals("localhost:8080", request.getRequestHeaders().get("Host"));
+        assertEquals("application/json", request.getRequestHeaders().get("Content-Type"));
+        assertEquals("0", request.getRequestHeaders().get("Content-Length"));
     }
 
 
@@ -88,11 +88,11 @@ public class ProcessorTest {
                 "Host: localhost:8080\r\n\r\n";
 
         InputStream inputStream = new ByteArrayInputStream(httpRequest.getBytes(StandardCharsets.UTF_8));
-        HttpResponse response = processor.parseRequest(inputStream);
+        HttpRequest request = processor.parseRequest(inputStream);
 
-        assertEquals("GET", response.getMethod());
-        assertEquals("HTTP/1.1", response.getProtocolVersion());
-        assertEquals("/test", response.getUrlPath());
+        assertEquals("GET", request.getMethod());
+        assertEquals("HTTP/1.1", request.getProtocolVersion());
+        assertEquals("/test", request.getUrlPath());
     }
 
     @Test
@@ -101,19 +101,19 @@ public class ProcessorTest {
                 "EmptyHeader:\r\n\r\n";
 
         InputStream inputStream = new ByteArrayInputStream(httpRequest.getBytes(StandardCharsets.UTF_8));
-        HttpResponse response = processor.parseRequest(inputStream);
+        HttpRequest request = processor.parseRequest(inputStream);
 
-        assertEquals("GET", response.getMethod());
-        assertEquals("HTTP/1.1", response.getProtocolVersion());
-        assertEquals("/", response.getUrlPath());
-        assertEquals("", response.getHeaders().get("EmptyHeader"));
+        assertEquals("GET", request.getMethod());
+        assertEquals("HTTP/1.1", request.getProtocolVersion());
+        assertEquals("/", request.getUrlPath());
+        assertEquals("", request.getRequestHeaders().get("EmptyHeader"));
     }
 
     @Test
     void testProcessRequest_RootEndpoint_Get() {
-        HttpResponse response = new HttpResponse("GET", "HTTP/1.1", "/", new HashMap<>());
+        HttpRequest request = new HttpRequest("GET", "HTTP/1.1", "/", new HashMap<>());
 
-        response = processor.processRequest(response);
+        HttpResponse response = processor.processRequest(request);
 
         assertEquals("200 OK", response.getStatusCode());
         assertEquals("Successful GET Request", response.getBody());
@@ -127,9 +127,9 @@ public class ProcessorTest {
             "/util/time", "/util/logs", "/health"
     })
     void testProcessRequest_SupportedEndpoints_Get(String endpoint) {
-        HttpResponse response = new HttpResponse("GET", "HTTP/1.1", endpoint, new HashMap<>());
+        HttpRequest request = new HttpRequest("GET", "HTTP/1.1", endpoint, new HashMap<>());
 
-        response = processor.processRequest(response);
+        HttpResponse response = processor.processRequest(request);
 
         // Cannot assert exact values since command execution depends on system
         assertNotNull(response.getStatusCode());
@@ -144,9 +144,9 @@ public class ProcessorTest {
             "/util/time", "/util/logs", "/health"
     })
     void testProcessRequest_SupportedEndpoints_Post(String endpoint) {
-        HttpResponse response = new HttpResponse("POST", "HTTP/1.1", endpoint, new HashMap<>());
+        HttpRequest request = new HttpRequest("POST", "HTTP/1.1", endpoint, new HashMap<>());
 
-        response = processor.processRequest(response);
+        HttpResponse response = processor.processRequest(request);
 
         assertEquals("405 Method Not Allowed", response.getStatusCode());
         assertEquals("Method not supported", response.getBody());
@@ -154,9 +154,9 @@ public class ProcessorTest {
 
     @Test
     void testProcessRequest_UnsupportedEndpoint() {
-        HttpResponse response = new HttpResponse("GET", "HTTP/1.1", "/unknown", new HashMap<>());
+        HttpRequest request = new HttpRequest("GET", "HTTP/1.1", "/unknown", new HashMap<>());
 
-        response = processor.processRequest(response);
+        HttpResponse response = processor.processRequest(request);
 
         assertEquals("404 NOT FOUND", response.getStatusCode());
         assertEquals("Cannot find what you are looking for.", response.getBody());
@@ -164,9 +164,9 @@ public class ProcessorTest {
 
     @Test
     void testProcessRequest_UnsupportedMethod() {
-        HttpResponse response = new HttpResponse("DELETE", "HTTP/1.1", "/", new HashMap<>());
+        HttpRequest request = new HttpRequest("DELETE", "HTTP/1.1", "/", new HashMap<>());
 
-        response = processor.processRequest(response);
+        HttpResponse response = processor.processRequest(request);
 
         assertEquals("405 Method Not Allowed", response.getStatusCode());
         assertEquals("Method not supported", response.getBody());
@@ -174,17 +174,13 @@ public class ProcessorTest {
 
     @Test
     void testExecuteCommand_SuccessfulExecution() throws Exception {
-        // Create a test HttpResponse
-        HttpResponse response = new HttpResponse("GET", "HTTP/1.1", "/test", new HashMap<>());
+        HttpResponse response = new HttpResponse("HTTP/1.1");
 
-        // Use Java reflection to access the private executeCommand method
         Method executeCommandMethod = Processor.class.getDeclaredMethod("executeCommand", ProcessBuilder.class, HttpResponse.class);
         executeCommandMethod.setAccessible(true);
 
-        // Command that should succeed on most systems
         ProcessBuilder echoCommand = new ProcessBuilder("echo", "test");
 
-        // Execute the command through reflection
         executeCommandMethod.invoke(processor, echoCommand, response);
 
         assertEquals("200 OK", response.getStatusCode());
@@ -194,7 +190,7 @@ public class ProcessorTest {
     @Test
     void testExecuteCommand_FailedExecution() throws Exception {
         // Create a test HttpResponse
-        HttpResponse response = new HttpResponse("GET", "HTTP/1.1", "/test", new HashMap<>());
+        HttpResponse response = new HttpResponse("HTTP/1.1");
 
         // Use Java reflection to access the private executeCommand method
         Method executeCommandMethod = Processor.class.getDeclaredMethod("executeCommand", ProcessBuilder.class, HttpResponse.class);

@@ -25,14 +25,14 @@ public class Processor {
      * Parses an HTTP request from the given input stream.
      * 
      * <p>This method reads the request line and headers from the input stream
-     * and creates an HttpResponse object with the parsed information. Note that
-     * the HTTP method is stored in the statusCode field of the HttpResponse.</p>
+     * and creates an HttpRequest object with the parsed information. Note that
+     * the HTTP method is stored in the statusCode field of the HttpRequest.</p>
      * 
      * @param input the InputStream containing the HTTP request
-     * @return an HttpResponse object containing the parsed request information
+     * @return an HttpRequest object containing the parsed request information
      * @throws IOException if an I/O error occurs while reading from the input stream
      */
-    public HttpResponse parseRequest(InputStream input) throws IOException {
+    public HttpRequest parseRequest(InputStream input) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(input));
         String line = reader.readLine();
 
@@ -63,9 +63,7 @@ public class Processor {
             }
         }
 
-        HttpResponse response = new HttpResponse(method, protocolVersion, urlPath, headers);
-
-        return response;
+        return new HttpRequest(method, protocolVersion, urlPath, headers);
     }
 
     /**
@@ -95,13 +93,15 @@ public class Processor {
      * For unsupported HTTP methods, a 405 Method Not Allowed status is returned.
      * For unrecognized paths, a 404 Not Found status is returned.
      * 
-     * @param response The com.app.HttpResponse object containing request details and to be populated with response data
-     * @return The modified com.app.HttpResponse object with status code, body, and other relevant information
+     * @param request The HttpRequest object containing request details and to be populated with response data
+     * @return The modified HttpResponse object with status code, body, and other relevant information
      */
-    public HttpResponse processRequest(HttpResponse response) {
-        switch(response.getUrlPath()) {
+    public HttpResponse processRequest(HttpRequest request) {
+        HttpResponse response = new HttpResponse(request.getProtocolVersion());
+
+        switch(request.getUrlPath()) {
             case "/":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     response.setStatusCode("200 OK");
                     response.setBody("Successful GET Request");
                 } else {
@@ -110,7 +110,7 @@ public class Processor {
                 }
                 break;
             case "/system/info":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder systemInfo = new ProcessBuilder("cat", "/etc/os-release");
                     executeCommand(systemInfo, response);
                 } else {
@@ -119,7 +119,7 @@ public class Processor {
                 }
                 break;
             case "/system/memory":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder memoryInfo = new ProcessBuilder("free", "-m");
                     executeCommand(memoryInfo, response);
                 } else {
@@ -128,7 +128,7 @@ public class Processor {
                 }
                 break;
             case "/system/disk":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder diskSpace = new ProcessBuilder("df", "-h");
                     executeCommand(diskSpace, response);
                 } else {
@@ -137,7 +137,7 @@ public class Processor {
                 };
                 break;
             case "/network/iface":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder networkInterface = new ProcessBuilder("ip", "addr");
                     executeCommand(networkInterface, response);
                 } else {
@@ -146,7 +146,7 @@ public class Processor {
                 }
                 break;
             case "/network/ip":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder ipAddress = new ProcessBuilder("ip", "route get 1");
                     executeCommand(ipAddress, response);
                 } else {
@@ -155,7 +155,7 @@ public class Processor {
                 }
                 break;
             case "/network/ping":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder ping = new ProcessBuilder("ping", "-c 4 8.8.8.8");
                     executeCommand(ping, response);
                 } else {
@@ -164,7 +164,7 @@ public class Processor {
                 }
                 break;
             case "/hardware/cpu":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder cpu = new ProcessBuilder("top", "-bn1 | grep \"Cpu(s)\"");
                     executeCommand(cpu, response);
                 } else {
@@ -173,7 +173,7 @@ public class Processor {
                 }
                 break;
             case "/hardware/load":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder load = new ProcessBuilder("cat", "/proc/loadavg");
                     executeCommand(load, response);
                 } else {
@@ -182,7 +182,7 @@ public class Processor {
                 }
                 break;
             case "/hardware/processes":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder proc = new ProcessBuilder("ps", "aux");
                     executeCommand(proc, response);
                 } else {
@@ -191,7 +191,7 @@ public class Processor {
                 }
                 break;
             case "/util/time":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder time = new ProcessBuilder("timedatectl");
                     executeCommand(time, response);
                 } else {
@@ -200,7 +200,7 @@ public class Processor {
                 }
                 break;
             case "/util/logs":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder logs = new ProcessBuilder("journalctl", "-n 50");
                     executeCommand(logs, response);
                 } else {
@@ -209,7 +209,7 @@ public class Processor {
                 }
                 break;
             case "/health":
-                if (response.getMethod().equals("GET")) {
+                if (request.getMethod().equals("GET")) {
                     ProcessBuilder systemHealth = new ProcessBuilder("bash", "-c", "uptime && free -h && df -h && top -bn1 | grep 'Cpu(s)'");
                     executeCommand(systemHealth, response);
                 } else {

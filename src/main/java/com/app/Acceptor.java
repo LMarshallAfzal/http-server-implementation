@@ -81,8 +81,4 @@ public class Acceptor {
             serverSocket.close();
         }
     }
-
-    public boolean isSecure() {
-        return isSecure;
-    }
 }

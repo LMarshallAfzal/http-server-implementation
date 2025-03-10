@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.Socket;
 
 /**
- * The com.app.Main class is the entry point for the HTTP server application.
- * It creates a com.app.Acceptor to listen for incoming connections and handles
+ * The Main class is the entry point for the HTTP server application.
+ * It creates an  Acceptor to listen for incoming connections and handles
  * client requests by creating a new thread for each connection.
  * 
  * <p>The server runs in an infinite loop, continuously accepting new connections
@@ -20,8 +20,8 @@ public class Main {
      * to accept incoming connections. For each connection, it creates a new thread
      * that processes the request and sends a response.</p>
      * 
-     * @param args command line arguments (not used)
-     * @throws IOException if an I/O error occurs when creating the com.app.Acceptor
+     * @param args command line arguments '--ssl' for encryption
+     * @throws IOException if an I/O error occurs when creating the Acceptor
      */
     public static void main(String[] args) throws IOException {
         boolean enableSSL = args.length > 0 && args[0].equalsIgnoreCase("--ssl");
