@@ -354,6 +354,11 @@ public class ProcessorTest {
 
         String decompressed = decompressGzip(response.getCompressedBody());
         assertEquals(body, decompressed);
+
+        byte[] originalBodyBytes = response.getBody().getBytes(StandardCharsets.UTF_8);
+        byte[] compressedBodyBytes = response.getCompressedBody();
+
+        assertTrue(compressedBodyBytes.length < originalBodyBytes.length, "Compressed body should be smaller than original body");
     }
 
     @Test
@@ -374,6 +379,11 @@ public class ProcessorTest {
 
         assertNotNull(response.getCompressedBody());
         assertEquals("gzip", response.getHeaders().get("Content-Encoding"));
+
+        byte[] originalBodyBytes = response.getBody().getBytes(StandardCharsets.UTF_8);
+        byte[] compressedBodyBytes = response.getCompressedBody();
+
+        assertTrue(compressedBodyBytes.length < originalBodyBytes.length, "Compressed body should be smaller than original body");
     }
 
     @Test
@@ -394,6 +404,11 @@ public class ProcessorTest {
 
         assertNotNull(response.getCompressedBody());
         assertEquals("gzip", response.getHeaders().get("Content-Encoding"));
+
+        byte[] originalBodyBytes = response.getBody().getBytes(StandardCharsets.UTF_8);
+        byte[] compressedBodyBytes = response.getCompressedBody();
+
+        assertTrue(compressedBodyBytes.length < originalBodyBytes.length, "Compressed body should be smaller than original body");
     }
 
     @Test
@@ -414,5 +429,10 @@ public class ProcessorTest {
 
         assertNotNull(response.getCompressedBody());
         assertEquals("gzip", response.getHeaders().get("Content-Encoding"));
+
+        byte[] originalBodyBytes = response.getBody().getBytes(StandardCharsets.UTF_8);
+        byte[] compressedBodyBytes = response.getCompressedBody();
+
+        assertTrue(compressedBodyBytes.length < originalBodyBytes.length, "Compressed body should be smaller than original body");
     }
 }
