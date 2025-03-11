@@ -21,9 +21,9 @@ import javax.net.ssl.SSLServerSocket;
  * </ul>
  */
 public class Acceptor {
-    private ServerSocket serverSocket;
+    private final ServerSocket serverSocket;
     private Socket clientSocket;
-    private boolean isSecure;
+    private final boolean isSecure;
 
     /**
      * Constructs an Acceptor that listens on port 8443 (SSL/TLS) or port 8080

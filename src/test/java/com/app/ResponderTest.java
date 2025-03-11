@@ -31,7 +31,7 @@ public class ResponderTest {
         String output = outputStream.toString(StandardCharsets.UTF_8);
         assertTrue(output.startsWith("HTTP/1.1 200 OK\r\n"));
         assertTrue(output.contains("Content-Type: text/plain\r\n"));
-        assertTrue(output.endsWith("\r\n\n"));
+        assertTrue(output.endsWith("\r\n"));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class ResponderTest {
         assertTrue(output.startsWith("HTTP/1.1 204 No Content\r\n"));
         assertTrue(output.contains("Content-Type: text/plain\r\n"));
         assertFalse(output.contains("Content-Length:"));
-        assertTrue(output.endsWith("\r\n\n"));
+        assertTrue(output.endsWith("\r\n"));
     }
 
     @Test

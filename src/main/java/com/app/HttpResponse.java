@@ -18,6 +18,7 @@ public class HttpResponse {
     private final String protocolVersion;
     private HashMap<String, String> headers;
     private String body;
+    private byte[] compressedBody;
 
     /**
      * Constructs a complete HTTP response with all components.
@@ -135,5 +136,33 @@ public class HttpResponse {
     public void setBody(String body) {
         this.body = body;
         this.setHeader("Content-Length", String.valueOf(body.getBytes(StandardCharsets.UTF_8).length));
+    }
+
+    /**
+     * Gets the response body content.
+     *
+     * @return the body string
+     */
+    public byte[] getCompressedBody() {
+        return compressedBody;
+    }
+
+    /**
+     * Sets the compressed response body content.
+     *
+     * @param compressedBody the compressed body content to set
+     */
+    public void setCompressedBody(byte[] compressedBody) {
+        this.compressedBody = compressedBody;
+        this.setHeader("Content-Length", String.valueOf(body.getBytes(StandardCharsets.UTF_8).length));
+    }
+
+    /**
+     * Checks if response body has been compressed
+     *
+     * @return a boolean: true if is compressed, false if not
+     */
+    public boolean isCompressed() {
+        return compressedBody != null;
     }
 }

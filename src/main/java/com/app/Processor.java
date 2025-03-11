@@ -1,12 +1,11 @@
  package com.app;
 
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.zip.GZIPOutputStream;
 
-/**
+ /**
  * The com.app.Processor class handles HTTP request parsing and processing.
  * It reads the incoming HTTP request, extracts relevant information,
  * and generates an appropriate HTTP response.
@@ -222,6 +221,8 @@ public class Processor {
                 response.setBody("Cannot find what you are looking for.");        
         }
 
+        compressResponse(request, response);
+
         return response;
     }
 
@@ -267,6 +268,51 @@ public class Processor {
         } catch (IOException | InterruptedException e) {
             response.setStatusCode("500 Internal Server Error");
             response.setBody("Error executing command: " + e.getMessage());
+        }
+    }
+
+
+    private void compressResponse(HttpRequest request, HttpResponse response) {
+        String acceptEncoding = request.getRequestHeaders().get("Accept-Encoding");
+
+        if (acceptEncoding == null || !acceptEncoding.contains("gzip")) {
+            return;
+        }
+
+        if (response.getBody() == null || response.getBody().isEmpty()) {
+            return;
+        }
+
+        byte[] body = response.getBody().getBytes(StandardCharsets.UTF_8);
+        if (body.length < 1024) {
+            return;
+        }
+
+        String contentType = response.getHeaders().get("Content-Type");
+        boolean isCompressible = contentType != null && ((contentType.startsWith("text/")) || contentType.contains("json") || contentType.contains("xml") || contentType.contains("javascript"));
+
+        if (!isCompressible) {
+            return;
+        }
+
+        try {
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream(body.length);
+
+            GZIPOutputStream gzipStream = new GZIPOutputStream(byteStream);
+
+            gzipStream.write(body);
+            gzipStream.finish();
+            gzipStream.close();
+
+            byte[] compressedBody = byteStream.toByteArray();
+
+            response.setCompressedBody(compressedBody);
+            response.setHeader("Content-Encoding", "gzip");
+            response.setHeader("Content-Length", String.valueOf(compressedBody.length));
+            response.setHeader("Vary", "Accept-Encoding");
+
+        } catch (IOException e) {
+            System.err.println("Compression failed: " + e.getMessage());
         }
     }
 }

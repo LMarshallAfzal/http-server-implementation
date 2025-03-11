@@ -35,22 +35,24 @@ public class Responder {
      * @throws IOException if an I/O error occurs while writing to the output stream
      */
     public void sendResponse(HttpResponse response, OutputStream outputStream) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append(response.getProtocolVersion()).append(" ").append(response.getStatusCode()).append("\r\n");
+        StringBuilder headerBuilder = new StringBuilder();
+        headerBuilder.append(response.getProtocolVersion()).append(" ").append(response.getStatusCode()).append("\r\n");
 
         for (Map.Entry<String, String> header : response.getHeaders().entrySet()) {
-            sb.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
+            headerBuilder.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
         }
 
-        sb.append("\r\n\n");
+        headerBuilder.append("\r\n");
 
-        if (response.getBody() != null) {
-            sb.append(response.getBody());
+        outputStream.write(headerBuilder.toString().getBytes(StandardCharsets.UTF_8));
+
+        if (response.isCompressed()) {
+            outputStream.write(response.getCompressedBody());
+
+        } else if (response.getBody() != null) {
+            outputStream.write(response.getBody().getBytes(StandardCharsets.UTF_8));
         }
 
-        System.out.println(sb);
-
-        outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));
         outputStream.flush();
     }
 }
