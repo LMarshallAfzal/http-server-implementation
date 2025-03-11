@@ -194,5 +194,4 @@ public class ResponderTest {
         assertTrue(output.contains("Content-Length: " + (100 * 1024) + "\r\n"));
         assertEquals(100 * 1024 + output.indexOf(largeBody.toString()), output.length());
     }
-
 }
