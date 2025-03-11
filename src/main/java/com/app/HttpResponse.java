@@ -135,7 +135,9 @@ public class HttpResponse {
      */
     public void setBody(String body) {
         this.body = body;
-        this.setHeader("Content-Length", String.valueOf(body.getBytes(StandardCharsets.UTF_8).length));
+        if (body != null) {
+            this.setHeader("Content-Length", String.valueOf(body.getBytes(StandardCharsets.UTF_8).length));
+        }
     }
 
     /**

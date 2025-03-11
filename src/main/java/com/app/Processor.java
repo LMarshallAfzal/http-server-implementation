@@ -271,15 +271,29 @@ public class Processor {
         }
     }
 
-
+     /**
+      * Compresses the HTTP response body using GZIP compression if applicable.
+      *
+      * <p>This method determines if compression should be applied based on multiple criteria:</p>
+      * <ul>
+      *   <li>Client must support GZIP compression (via Accept-Encoding header)</li>
+      *   <li>Response body must not be null or empty</li>
+      *   <li>Response body size must be at least 1KB (1024 bytes)</li>
+      *   <li>Content type must be compressible (text, JSON, XML, JavaScript)</li>
+      * </ul>
+      *
+      * @param request The HTTP request containing client capabilities
+      * @param response The HTTP response to potentially compress
+      */
     private void compressResponse(HttpRequest request, HttpResponse response) {
         String acceptEncoding = request.getRequestHeaders().get("Accept-Encoding");
 
-        if (acceptEncoding == null || !acceptEncoding.contains("gzip")) {
+        if (acceptEncoding == null || !acceptEncoding.toLowerCase().contains("gzip")) {
             return;
         }
 
         if (response.getBody() == null || response.getBody().isEmpty()) {
+            System.out.println("Is null");
             return;
         }
 
