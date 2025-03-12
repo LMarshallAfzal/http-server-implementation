@@ -4,8 +4,8 @@ import java.io.File;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
+import java.util.ArrayList;
 import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLServerSocket;
 
 /**
  * The Acceptor class handles incoming network connections for the HTTP server.
@@ -24,6 +24,8 @@ public class Acceptor {
     private final ServerSocket serverSocket;
     private Socket clientSocket;
     private final boolean isSecure;
+    private static final int HTTP_PORT = 8080;
+    private static final int HTTPS_PORT = 8443;
 
     /**
      * Constructs an Acceptor that listens on port 8443 (SSL/TLS) or port 8080
@@ -44,16 +46,16 @@ public class Acceptor {
                 System.setProperty("javax.net.ssl.keyStorePassword", "password");
 
                 SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-                serverSocket = sslServerSocketFactory.createServerSocket(8443);
-                System.out.println("Secure server listening on port 8443");
+                serverSocket = sslServerSocketFactory.createServerSocket(HTTPS_PORT);
+                System.out.println("Secure server listening on port " + HTTPS_PORT);
             } catch (Exception e) {
-                System.err.println("Failed server listening on port 8443");
+                System.err.println("Failed server listening on port " + HTTPS_PORT);
                 e.printStackTrace();
                 throw new IOException("SSL initialization failed", e);
             }
         } else {
-            serverSocket = new ServerSocket(8080);
-            System.out.println("Server listening on port 8080");
+            serverSocket = new ServerSocket(HTTP_PORT);
+            System.out.println("Server listening on port " + HTTP_PORT);
         }
         clientSocket = null;
     }
@@ -78,6 +80,7 @@ public class Acceptor {
      */
     public void close() throws IOException {
         if (serverSocket != null) {
+            System.out.println("Server socket closed!");
             serverSocket.close();
         }
     }
