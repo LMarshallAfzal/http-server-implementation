@@ -3,6 +3,7 @@
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
  /**
@@ -61,6 +62,15 @@ public class Processor {
                 throw new IOException("Malformed HTTP header: " + line);
             }
         }
+
+        System.out.println("Request Headers:");
+//        HashMap<String, String> headers = request.getRequestHeaders();
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            System.out.println(key + ": " + value);
+        }
+        System.out.println("\n");
 
         return new HttpRequest(method, protocolVersion, urlPath, headers);
     }

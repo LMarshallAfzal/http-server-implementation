@@ -46,6 +46,9 @@ public class Responder {
 
         outputStream.write(headerBuilder.toString().getBytes(StandardCharsets.UTF_8));
 
+        System.out.println("Response Headers:");
+        System.out.println(headerBuilder);
+
         if (response.isCompressed()) {
             outputStream.write(response.getCompressedBody());
 

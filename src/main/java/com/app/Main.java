@@ -1,7 +1,9 @@
 package com.app;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.Socket;
+import java.util.ArrayList;
 
 /**
  * The Main class is the entry point for the HTTP server application.
@@ -12,7 +14,6 @@ import java.net.Socket;
  * and processing requests concurrently.</p>
  */
 public class Main {
-    
     /**
      * The main method that starts the HTTP server.
      * 
@@ -25,29 +26,38 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
         boolean enableSSL = args.length > 0 && args[0].equalsIgnoreCase("--ssl");
+//        ArrayList<Socket> connectedClients = new ArrayList<>();
 
         try {
             Acceptor acceptor = new Acceptor(enableSSL);
             System.out.println("Server started " + (enableSSL ? "with SSL" : "without SSL"));
 
             while (true) {
+//                connectedClients.add(acceptor.acceptConnections());
                 Socket clientSocket = acceptor.acceptConnections();
 
                 new Thread(() -> {
                     try {
                         Processor processor = new Processor();
-                        HttpResponse response = processor.processRequest(processor.parseRequest(clientSocket.getInputStream()));
+                        HttpRequest request = processor.parseRequest(clientSocket.getInputStream());
+
+                        HttpResponse response = processor.processRequest(request);
 
                         Responder responder = new Responder();
                         responder.sendResponse(response, clientSocket.getOutputStream());
 
+                        boolean keepAlive = request.getRequestHeaders().containsKey("Connection") && request.getRequestHeaders().get("Connection").equals("keep-alive");
+
+                        if (!keepAlive) {
+                            clientSocket.close();
+                        }
+
                     } catch (IOException e) {
                         e.printStackTrace();
-                    } finally {
                         try {
                             clientSocket.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                        } catch (IOException closeEx) {
+                            closeEx.printStackTrace();
                         }
                     }
                 }).start();

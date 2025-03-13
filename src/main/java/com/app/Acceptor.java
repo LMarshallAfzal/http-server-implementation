@@ -26,6 +26,7 @@ public class Acceptor {
     private final boolean isSecure;
     private static final int HTTP_PORT = 8080;
     private static final int HTTPS_PORT = 8443;
+    private ConnectionManager connectionManager = new ConnectionManager();
 
     /**
      * Constructs an Acceptor that listens on port 8443 (SSL/TLS) or port 8080
@@ -68,7 +69,10 @@ public class Acceptor {
      * @throws IOException if an I/O error occurs when waiting for a connection
      */
     public Socket acceptConnections() throws IOException {
+//        ArrayList<Socket> currentClients = connectionManager.getAllConnectedClients();
+        // if current clients contains a client socket with a host that is already connected return true
         clientSocket = serverSocket.accept();
+//        connectionManager.addConnectedClient(clientSocket);
         System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress() + (isSecure ? " (secure connection)" : "") + "\n");
         return clientSocket;
     }
