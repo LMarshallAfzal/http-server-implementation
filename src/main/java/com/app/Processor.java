@@ -1,6 +1,8 @@
  package com.app;
 
+import java.awt.image.BufferedImageFilter;
 import java.io.*;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -61,10 +63,11 @@ public class Processor {
             } else {
                 throw new IOException("Malformed HTTP header: " + line);
             }
+
         }
 
+        // Debug logs for request headers
         System.out.println("Request Headers:");
-//        HashMap<String, String> headers = request.getRequestHeaders();
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();

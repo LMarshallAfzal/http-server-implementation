@@ -4,7 +4,7 @@ import java.io.File;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.SSLServerSocketFactory;
 
 /**
@@ -26,7 +26,6 @@ public class Acceptor {
     private final boolean isSecure;
     private static final int HTTP_PORT = 8080;
     private static final int HTTPS_PORT = 8443;
-    private ConnectionManager connectionManager = new ConnectionManager();
 
     /**
      * Constructs an Acceptor that listens on port 8443 (SSL/TLS) or port 8080
@@ -34,7 +33,7 @@ public class Acceptor {
      * @throws IOException IOException if the server socket cannot be created or bound to port 8080.
      */
     public Acceptor(boolean enableSSL) throws IOException {
-        this.isSecure = enableSSL;
+        isSecure = enableSSL;
 
         if (enableSSL) {
             File keystore = new File("keystore.jks");
@@ -68,13 +67,24 @@ public class Acceptor {
      * @return a Socket connected to the client
      * @throws IOException if an I/O error occurs when waiting for a connection
      */
-    public Socket acceptConnections() throws IOException {
-//        ArrayList<Socket> currentClients = connectionManager.getAllConnectedClients();
-        // if current clients contains a client socket with a host that is already connected return true
+    public Socket acceptConnections(ConnectionManager connectionManager) throws IOException {
         clientSocket = serverSocket.accept();
-//        connectionManager.addConnectedClient(clientSocket);
-        System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress() + (isSecure ? " (secure connection)" : "") + "\n");
+        System.out.println(connectionManager.getAllConnectedClients().size());
+
+        if (!isClientConnected(connectionManager)) {
+            connectionManager.addConnectedClient(clientSocket.getInetAddress().getHostAddress(), clientSocket);
+        }
+
         return clientSocket;
+    }
+
+    /**
+     * Check if the client socket is already connected to the server
+     *
+     * @return boolean true if socket is already connected
+     */
+    private boolean isClientConnected(ConnectionManager connectionManager) {
+        return connectionManager.isClientConnected(clientSocket.getInetAddress().getHostAddress());
     }
 
     /**
