@@ -35,15 +35,15 @@ public class Main {
             System.out.println("Server started " + (enableSSL ? "with SSL" : "without SSL"));
 
             while (true) {
-                Socket clientSocket = acceptor.acceptConnections(connectionManager);
+                Socket clientSocket = acceptor.acceptConnection();
 
-                int threadId = threadCounter.incrementAndGet();
-                System.out.println("Creating thread #" + threadId + " - Total active threads: " + threadCounter.get());
+                if (!connectionManager.isClientConnected(clientSocket)) {
+                    int threadId = threadCounter.incrementAndGet();
+                    System.out.println("Creating thread #" + threadId + " - Total active threads: " + threadCounter.get());
 
-                if (!clientSocket.isClosed()) {
                     new Thread(() -> {
                         try {
-                            System.out.println("Thread #" + threadId + " started\n");
+                            System.out.println("Thread #" + threadId + " started");
 
                             clientSocket.setSoTimeout(30000);
                             Processor processor = new Processor();
@@ -54,12 +54,17 @@ public class Main {
                             );
                             OutputStream outputStream = clientSocket.getOutputStream();
 
+                            int requestCount = 0;
+
                             while (!clientSocket.isClosed()) {
                                 try {
                                     int peekedByte = pbInputStream.read();
                                     if (peekedByte != -1) {
+                                        requestCount++;
+
                                         pbInputStream.unread(peekedByte);
 
+                                        System.out.println("Thread #" + threadId + " processing request #" + requestCount);
                                         HttpRequest request = processor.parseRequest(pbInputStream);
                                         HttpResponse response = processor.processRequest(request);
                                         responder.sendResponse(response, outputStream);
@@ -69,6 +74,9 @@ public class Main {
                                         if (!keepAlive) {
                                             break;
                                         }
+                                    } else {
+                                        System.out.println("Client closed the connection");
+                                        break;
                                     }
                                 } catch (SocketTimeoutException e) {
                                     System.out.println("Connection to " + clientSocket.getInetAddress().getHostName() + " timed out");
@@ -85,13 +93,16 @@ public class Main {
                                 System.out.println("Thread #" + threadId + " terminated");
                                 threadCounter.decrementAndGet();
                                 System.out.println("Remaining active threads: " + threadCounter.get());
-                                connectionManager.removeClient(clientSocket.getInetAddress().getHostAddress());
+                                connectionManager.removeClient(clientSocket);
                                 clientSocket.close();
                             } catch (IOException closeEx) {
                                 closeEx.printStackTrace();
                             }
                         }
                     }).start();
+                } else {
+                    System.out.println("Duplicate connection detected, closing: " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort());
+                    clientSocket.close();
                 }
             }
         } catch (IOException e) {

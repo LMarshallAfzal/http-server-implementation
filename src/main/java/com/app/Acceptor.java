@@ -67,24 +67,8 @@ public class Acceptor {
      * @return a Socket connected to the client
      * @throws IOException if an I/O error occurs when waiting for a connection
      */
-    public Socket acceptConnections(ConnectionManager connectionManager) throws IOException {
-        clientSocket = serverSocket.accept();
-        System.out.println(connectionManager.getAllConnectedClients().size());
-
-        if (!isClientConnected(connectionManager)) {
-            connectionManager.addConnectedClient(clientSocket.getInetAddress().getHostAddress(), clientSocket);
-        }
-
-        return clientSocket;
-    }
-
-    /**
-     * Check if the client socket is already connected to the server
-     *
-     * @return boolean true if socket is already connected
-     */
-    private boolean isClientConnected(ConnectionManager connectionManager) {
-        return connectionManager.isClientConnected(clientSocket.getInetAddress().getHostAddress());
+    public Socket acceptConnection() throws IOException {
+        return serverSocket.accept();
     }
 
     /**

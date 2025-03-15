@@ -99,7 +99,7 @@ public class AcceptorTest {
         acceptor = new Acceptor(false);
         Future<?> serverFuture = executor.submit(() -> {
             try {
-                Socket clientSocket = acceptor.acceptConnections();
+                Socket clientSocket = acceptor.acceptConnection();
                 assertNotNull(clientSocket, "Accepted socket should not be null");
                 assertFalse(clientSocket.isClosed(), "Accepted socket should be open");
                 clientSocket.close();
@@ -128,7 +128,7 @@ public class AcceptorTest {
         Future<?> serverFuture = executor.submit(() -> {
             try {
                 for (int i = 0; i < NUM_CONNECTIONS; i++) {
-                    Socket socket = acceptor.acceptConnections();
+                    Socket socket = acceptor.acceptConnection();
                     acceptedSockets.add(socket);
                 }
             } catch (IOException e) {
@@ -161,10 +161,11 @@ public class AcceptorTest {
     @Test
     void testAcceptConnections_Interrupted_ThrowsException() throws Exception {
         acceptor = new Acceptor(false);
+        ConnectionManager connectionManager = new ConnectionManager();
 
         Thread serverThread = new Thread(() -> {
             try {
-                acceptor.acceptConnections();
+                acceptor.acceptConnection();
                 fail("Should not reach here because thread is interrupted");
             } catch (IOException e) {
                 assertTrue(e.getMessage().contains("accept") ||
@@ -192,7 +193,7 @@ public class AcceptorTest {
 
         Future<?> serverFuture = executor.submit(() -> {
             try {
-                acceptor.acceptConnections();
+                acceptor.acceptConnection();
                 fail("Should not reach here because socket is closed");
             } catch (IOException e) {
                 assertTrue(e.getMessage().contains("closed") || e.getMessage().contains("accept"),
@@ -229,7 +230,7 @@ public class AcceptorTest {
 
         Future<?> acceptFuture = executor.submit(() -> {
             try {
-                acceptor.acceptConnections();
+                acceptor.acceptConnection();
                 fail("Should not reach here because socket is closed");
             } catch (IOException e) {
                 assertTrue(e.getMessage().contains("closed") ||
