@@ -98,14 +98,38 @@ public class Acceptor {
 
             if ("h2".equals(protocol)) {
                 System.out.println("HTTP/2 connection established");
-                return sslSocket;
-
+                boolean prefaceIsValid = verifyHttp2ConnectionPreface(sslSocket);
+                if (!prefaceIsValid) {
+                    sslSocket.close();
+                    return acceptConnection();
+                }
+                socket.setPropert("protocol", "h2");
             } else {
                 System.out.println("HTTP/1.1 connection established");
-                return sslSocket;
             }
         }
         return socket;
+    }
+
+    private boolean verifyHttp2ConnectionPreface(Socket socket) throws IOException {
+        static byte[] CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(StandardCharsets.US_ASCII);
+        byte[] preface = new byte[CONNECTION_PREFACE.length];
+        
+        InputStream inputStream = new InputStream();
+        int bytesRead = inputStream.read(preface, 0, preface.length);
+
+        if (bytesRead != CONNECTION_PREFACE.length) {
+            System.err.println("Invalid HTTP/2 preface: incomplete read");
+            return false;
+        }
+
+        if (!Arrays.equals(preface, CONNECTION_PREFACE)) {
+            System.err.println("Invalid HTTP/2 preface: incorrect magic string");
+            return false;
+        }
+
+        System.out.println("Valid HTTP/2 connection preface received");
+        return true;
     }
 
     /**
