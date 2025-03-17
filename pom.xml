@@ -27,6 +27,13 @@
             <version>12.0.17</version>
         </dependency>
 
+        <!-- HPack -->
+        <dependency>
+            <groupId>com.twitter</groupId>
+            <artifactId>hpack</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+
         <!-- JUnit 5 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
