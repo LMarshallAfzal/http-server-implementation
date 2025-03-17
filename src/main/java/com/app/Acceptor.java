@@ -90,7 +90,22 @@ public class Acceptor {
      * @throws IOException if an I/O error occurs when waiting for a connection
      */
     public Socket acceptConnection() throws IOException {
-        return serverSocket.accept();
+        Socket socket = serverSocket.accept();
+        if (socket instanceof SSLSocket) {
+            SSLSocket sslSocket = (SSLSocket) socket;
+            sslSocket.startHandshake();
+            String protocol = sslSocket.getApplicationProtocol();
+
+            if ("h2".equals(protocol)) {
+                System.out.println("HTTP/2 connection established");
+                return sslSocket;
+
+            } else {
+                System.out.println("HTTP/1.1 connection established");
+                return sslSocket;
+            }
+        }
+        return socket;
     }
 
     /**
