@@ -3,8 +3,11 @@ package com.app;
 import java.io.File;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.KeyStore;
+import java.io.FileInputStream;
 import java.io.IOException;
-import javax.net.ssl.SSLServerSocketFactory;
+import java.util.Arrays;
+import javax.net.ssl.*;
 
 /**
  * The Acceptor class handles incoming network connections for the HTTP server.
@@ -43,10 +46,30 @@ public class Acceptor {
             try {
                 System.setProperty("javax.net.ssl.keyStore", "keystore.jks");
                 System.setProperty("javax.net.ssl.keyStorePassword", "password");
+                
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                KeyStore ks = KeyStore.getInstance("JKS");
+                ks.load(new FileInputStream("keystore.jks"), "password".toCharArray());
+                kmf.init(ks, "password".toCharArray());
+                sslContext.init(kmf.getKeyManagers(), null, null);
 
-                SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-                serverSocket = sslServerSocketFactory.createServerSocket(HTTPS_PORT);
-                System.out.println("Secure server listening on port " + HTTPS_PORT);
+                SSLServerSocketFactory sslServerSocketFactory = sslContext.getServerSocketFactory();
+
+                SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(HTTPS_PORT);
+
+                sslServerSocket.setEnabledProtocols(new String[] {"TLSv1.2", "TLSv1.3"});
+
+                SSLParameters sslParameters = sslServerSocket.getSSLParameters();
+                
+                sslParameters.setApplicationProtocols(new String[] {"h2", "http/1/1"});
+
+                sslServerSocket.setSSLParameters(sslParameters);
+
+                serverSocket = sslServerSocket;
+                System.out.println("Secure server with ALPN support listening on port " + HTTPS_PORT);
+                System.out.println("Supported protocols: " + Arrays.toString(sslParameters.getApplicationProtocols()));
+
             } catch (Exception e) {
                 System.err.println("Failed server listening on port " + HTTPS_PORT);
                 e.printStackTrace();
