@@ -51,50 +51,110 @@ public class Http2Settings {
         maxHeaderListSize = 8192;
     }
 
+    /**
+     * Sets the initial window size for stream-level flow control.
+     *
+     * @param The initial window size in bytes
+     */
     public void setInitialWindowSize(int size) {
         initialWindowSize = size;
     }
 
+    /**
+     * Gets the initial window for stream-level flow control.
+     *
+     * @return The initial window size in bytes
+     */
     public int getInitialWindowSize() {
         return initialWindowSize;
     }
 
+    /**
+     * Sets the maximum size for the header compression table.
+     *
+     * @param size The maximum header table size in bytes
+     */
     public void setHeaderTableSize(int size) {
         headerTableSize = size;
     }
 
+    /**
+     * Gets the maximum size of the header compression table.
+     *
+     * @return The maximum header table size in bytes
+     */
     public int getHeaderTableSize() {
         return headerTableSize;
     }
 
+    /**
+     * Sets the maximum number of concurrent streams allowed.
+     *
+     * @return The maximum number of concurrent streams
+     */
     public void setMaxConcurrentStreams(int concurrentStreams) {
         maxConcurrentStreams = concurrentStreams;
     }
 
+    /**
+     * Gets the maximum number of concurrent streams allowed
+     * 
+     * @return The maximum number of concurrent streams
+     */
     public int getMaxConcurrentStreams() {
         return maxConcurrentStreams;
     }
 
+    /**
+     * Sets the maximum frame size allowed
+     *
+     * @param frameSize The maximum frame size in bytes
+     */
     public void setMaxFrameSize(int frameSize) {
         maxFrameSize = frameSize;
     }
 
+    /**
+     * Sets the maximum frame size allowed.
+     *
+     * @param frameSize The maximum frame size in bytes
+     */
     public int getMaxFrameSize() {
         return maxFrameSize;
     }
 
+    /**
+     * Sets the maximum header list size allowed.
+     *
+     * @param headerListSize The maximum header list size in bytes
+     */
     public void setMaxHeaderListSize(int headerListSize) {
         maxHeaderListSize = headerListSize;
     }
 
+    /**
+     * Gets the maximum header list size allowed.
+     *
+     * @param headerListSize The maximum header list size in bytes
+     */
     public int getMaxHeaderListSize() {
         return maxHeaderListSize;
     }
 
+    /**
+     * Sets whether server push is enabled
+     *
+     * @param push true to enable server push, false to disable
+     */
     public void setEnablePush(boolean push) {
         enablePush = push;
     }
 
+    /**
+     * Checks if server push is enabled.
+     *
+     * @return true if server push is enabled, false otherwise
+     */
     public boolean isPushEnabled() {
         return enablePush;
     }
