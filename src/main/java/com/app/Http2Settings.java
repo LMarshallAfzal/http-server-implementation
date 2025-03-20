@@ -159,4 +159,58 @@ public class Http2Settings {
         return enablePush;
     }
 
+    /**
+     * Merges settings from another Http2Settings object into this one.
+     * 
+     * @param settings The settings to merge from
+     */
+    public void merge(Http2Settings settings) {
+        if (settings == null) {
+            return;
+        }
+
+        setHeaderTableSize(settings.getHeaderTableSize());
+        setEnablePush(settings.isPushEnabled());
+        setMaxConcurrentStreams(settings.getMaxConcurrentStreams());
+        setInitialWindowSize(settings.getInitialWindowSize());
+        setMaxFrameSize(settings.getMaxFrameSize());
+        setMaxHeaderListSize(settings.getMaxHeaderListSize());
+
+    }
+
+    /**
+     * Creates a new settings object with a single setting changed
+     * 
+     * @param id    The setting identifier (0x1 - 0x6)
+     * @param value The value to set
+     * @return A new Http2Settings object with single setting applied
+     */
+    public static Http2Settings fromSingleSetting(int id, int value) {
+        Http2Settings settings = new Http2Settings();
+        switch (id) {
+            case SETTINGS_HEADER_TABLE_SIZE:
+                settings.setHeaderTableSize(value);
+                break;
+            case SETTINGS_ENABLE_PUSH:
+                settings.setEnablePush(value == 1);
+                break;
+            case SETTINGS_MAX_CONCURRENT_STREAMS:
+                settings.setMaxConcurrentStreams(value);
+                break;
+            case SETTINGS_INITIAL_WINDOW_SIZE:
+                settings.setInitialWindowSize(value);
+                break;
+            case SETTINGS_MAX_FRAME_SIZE:
+                settings.setMaxFrameSize(value);
+                break;
+            case SETTINGS_MAX_HEADER_LIST_SIZE:
+                settings.setMaxHeaderListSize(value);
+                break;
+            default:
+                // Unknowen setting, ignore
+        }
+
+        return settings;
+    }
+
 }
