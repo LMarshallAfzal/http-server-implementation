@@ -18,8 +18,9 @@ public class Http2ConnectionManager extends ConnectionManager {
     private int lastStreamId = 0;
     private boolean goAwaySent = false;
 
-    private final Encoder encoder = new Encoder(4096);
-    private final Decoder decoder = new Decoder();
+    private final Encoder encoder = new Encoder(remoteSettings.getHeaderTableSize());
+    private final Decoder decoder = new Decoder(remoteSettings.getMaxHeaderListSize(),
+            remoteSettings.getHeaderTableSize());
 
     public Http2ConnectionManager(Socket socket) {
         super(socket);
@@ -30,21 +31,20 @@ public class Http2ConnectionManager extends ConnectionManager {
     }
 
     public Http2Stream createStream(int streamId) {
-        Http2Stream stream = new Http2Stream(streamId);
+        Http2Stream stream = new Http2Stream(streamId, this);
         streams.put(streamId, stream);
         return stream;
     }
 
-    public void removeStream(intStreamId) {
-        streams.put(streamId, stream);
-        return stream;
+    public void removeStream(int streamId) {
+        streams.put(streamId);
     }
 
     public Collection<Http2Stream> getAllStreams() {
         return streams.values();
     }
 
-    public void updateLocalSettings(Http2Setting settings) {
+    public void updateLocalSettings(Http2Settings settings) {
         localSettings.merge(settings);
     }
 
@@ -81,11 +81,11 @@ public class Http2ConnectionManager extends ConnectionManager {
         // Implementation to encode and send a frame
     }
 
-    public HpackEncoder getEncoder() {
+    public Encoder getEncoder() {
         return encoder;
     }
 
-    public HpackDecoder getDecoder() {
+    public Decoder getDecoder() {
         return decoder;
     }
 
@@ -95,9 +95,5 @@ public class Http2ConnectionManager extends ConnectionManager {
             sendGoAway(lastStreamId, 0);
         }
         super.closeConnection(connectionId);
-
-
-
-
-    
+    }
 }
