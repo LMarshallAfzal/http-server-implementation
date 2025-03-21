@@ -1,11 +1,18 @@
 package com.app;
 
 import com.twitter.hpack.Encoder;
+
+import jdk.internal.net.http.frame.GoAwayFrame;
+import jdk.internal.net.http.frame.SettingsFrame;
+
 import com.twitter.hpack.Decoder;
 
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
+import java.io.IOException;
+import java.io.OutputStream;
 
 public class Http2ConnectionManager extends ConnectionManager {
     private final ConcurrentHashMap<Integer, Http2Stream> streams = new ConcurrentHashMap<>();
@@ -78,7 +85,22 @@ public class Http2ConnectionManager extends ConnectionManager {
     }
 
     public void sendFrame(Http2Frame frame) throws IOException {
-        // Implementation to encode and send a frame
+        ByteBuffer encodedFrame = frame.encode();
+
+        OutputStream out = socket.getOutputStream();
+        byte[] frameBytes = new byte[encodedFrame.remaining()];
+        encodedFrame.get(frameBytes);
+        out.write(frameBytes);
+        out.flush();
+
+        if (frame instanceof SettingsFrame && !((SettingsFrame) frame).isAck()) {
+            SettingsFrame settingsFrame = (SettingsFrame) frame;
+            localSettings.merge(settingsFrame.getSettings());
+        }
+
+        if (frame instanceof GoAwayFrame) {
+            goAwaySent = true;
+        }
     }
 
     public Encoder getEncoder() {
@@ -96,4 +118,3 @@ public class Http2ConnectionManager extends ConnectionManager {
         }
         super.closeConnection(connectionId);
     }
-}
