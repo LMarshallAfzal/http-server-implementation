@@ -1,25 +1,30 @@
 package com.app;
 
-import java.io.File;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
+import java.nio.charset.StandardCharsets;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import javax.net.ssl.*;
 
 /**
  * The Acceptor class handles incoming network connections for the HTTP server.
- * It manages a server socket that listens on a specified port (8080) and accepts
+ * It manages a server socket that listens on a specified port (8080) and
+ * accepts
  * incoming client connection requests.
  * 
- * <p>This class is responsible for:</p>
+ * <p>
+ * This class is responsible for:
+ * </p>
  * <ul>
- *   <li>Creating a server socket bound to port 8080</li>
- *   <li>Accepting incoming client connections</li>
- *   <li>Providing access to client sockets</li>
- *   <li>Proper resource cleanup</li>
+ * <li>Creating a server socket bound to port 8080</li>
+ * <li>Accepting incoming client connections</li>
+ * <li>Providing access to client sockets</li>
+ * <li>Proper resource cleanup</li>
  * </ul>
  */
 public class Acceptor {
@@ -32,7 +37,8 @@ public class Acceptor {
     /**
      * Constructs an Acceptor that listens on port 8443 (SSL/TLS) or port 8080
      *
-     * @throws IOException IOException if the server socket cannot be created or bound to port 8080.
+     * @throws IOException IOException if the server socket cannot be created or
+     *                     bound to port 8080.
      */
     public Acceptor(boolean enableSSL) throws IOException {
         isSecure = enableSSL;
@@ -46,7 +52,7 @@ public class Acceptor {
             try {
                 System.setProperty("javax.net.ssl.keyStore", "keystore.jks");
                 System.setProperty("javax.net.ssl.keyStorePassword", "password");
-                
+
                 SSLContext sslContext = SSLContext.getInstance("TLS");
                 KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                 KeyStore ks = KeyStore.getInstance("JKS");
@@ -56,13 +62,14 @@ public class Acceptor {
 
                 SSLServerSocketFactory sslServerSocketFactory = sslContext.getServerSocketFactory();
 
-                SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(HTTPS_PORT);
+                SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory
+                        .createServerSocket(HTTPS_PORT);
 
-                sslServerSocket.setEnabledProtocols(new String[] {"TLSv1.2", "TLSv1.3"});
+                sslServerSocket.setEnabledProtocols(new String[] { "TLSv1.2", "TLSv1.3" });
 
                 SSLParameters sslParameters = sslServerSocket.getSSLParameters();
-                
-                sslParameters.setApplicationProtocols(new String[] {"h2", "http/1/1"});
+
+                sslParameters.setApplicationProtocols(new String[] { "h2", "http/1/1" });
 
                 sslServerSocket.setSSLParameters(sslParameters);
 
@@ -83,7 +90,8 @@ public class Acceptor {
     }
 
     /**
-     * Blocks until a client connects to the server, then returns the new client socket.
+     * Blocks until a client connects to the server, then returns the new client
+     * socket.
      * This method updates the internal clientSocket reference.
      * 
      * @return a Socket connected to the client
@@ -103,7 +111,7 @@ public class Acceptor {
                     sslSocket.close();
                     return acceptConnection();
                 }
-                socket.setPropert("protocol", "h2");
+                socket.setProperty("protocol", "h2");
             } else {
                 System.out.println("HTTP/1.1 connection established");
             }
@@ -112,15 +120,20 @@ public class Acceptor {
     }
 
     private boolean verifyHttp2ConnectionPreface(Socket socket) throws IOException {
-        static byte[] CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(StandardCharsets.US_ASCII);
+        byte[] CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(StandardCharsets.US_ASCII);
         byte[] preface = new byte[CONNECTION_PREFACE.length];
-        
-        InputStream inputStream = new InputStream();
-        int bytesRead = inputStream.read(preface, 0, preface.length);
 
-        if (bytesRead != CONNECTION_PREFACE.length) {
-            System.err.println("Invalid HTTP/2 preface: incomplete read");
-            return false;
+        InputStream inputStream = socket.getInputStream();
+        int totalRead = 0;
+        int bytesRead;
+
+        while (totalRead < CONNECTION_PREFACE.length) {
+            bytesRead = inputStream.read(preface, totalRead, CONNECTION_PREFACE.length - totalRead);
+            if (bytesRead == -1) {
+                System.err.println("Invalid HTTP/2 preface: incomplete read");
+                return false;
+            }
+            totalRead += bytesRead;
         }
 
         if (!Arrays.equals(preface, CONNECTION_PREFACE)) {
