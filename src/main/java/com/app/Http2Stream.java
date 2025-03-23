@@ -150,6 +150,10 @@ public class Http2Stream {
     }
 
     // Header methods
+    public boolean isHeaderReceived() {
+        return headersReceived;
+    }
+
     public void addRequestHeader(String name, String value) {
         requestHeaders.put(name.toLowerCase(), value);
     }
