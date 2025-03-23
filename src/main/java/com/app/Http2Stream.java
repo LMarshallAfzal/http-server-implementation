@@ -150,7 +150,7 @@ public class Http2Stream {
     }
 
     // Header methods
-    public boolean isHeaderReceived() {
+    public boolean isHeadersReceived() {
         return headersReceived;
     }
 
