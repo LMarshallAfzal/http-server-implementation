@@ -7,7 +7,10 @@ import java.util.HashMap;
  * It encapsulates all the components of an HTTP request including status code,
  * protocol version, headers, and body content.
  *
- * <p>This class is used to construct the request that will be parsed and processed.</p>
+ * <p>
+ * This class is used to construct the request that will be parsed and
+ * processed.
+ * </p>
  */
 public class HttpRequest {
     private final String method;
@@ -18,10 +21,11 @@ public class HttpRequest {
     /**
      * Constructs a complete HTTP request with all components.
      *
-     * @param method the HTTP request method (e.g., "GET")
+     * @param method          the HTTP request method (e.g., "GET")
      * @param protocolVersion the HTTP protocol version (e.g., "HTTP/1.1")
-     * @param urlPath the URL path to send to (e.g., "/system/info")
-     * @param requestHeaders the HTTP request headers hashmap (e.g., (Connection: keep-alive))
+     * @param urlPath         the URL path to send to (e.g., "/system/info")
+     * @param requestHeaders  the HTTP request headers hashmap (e.g., (Connection:
+     *                        keep-alive))
      */
     public HttpRequest(String method, String protocolVersion, String urlPath, HashMap<String, String> requestHeaders) {
         this.method = method;
