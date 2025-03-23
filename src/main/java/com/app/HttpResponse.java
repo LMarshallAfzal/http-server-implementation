@@ -10,8 +10,11 @@ import java.util.HashMap;
  * It encapsulates all the components of an HTTP response including status code,
  * protocol version, headers, and body content.
  * 
- * <p>This class is used to construct the response that will be sent back to the client
- * after processing their HTTP request.<p>
+ * <p>
+ * This class is used to construct the response that will be sent back to the
+ * client
+ * after processing their HTTP request.
+ * <p>
  */
 public class HttpResponse {
     private String statusCode;
@@ -19,12 +22,13 @@ public class HttpResponse {
     private HashMap<String, String> headers;
     private String body;
     private byte[] compressedBody;
+    private HashMap<String, Object> properties = new HashMap<>();
 
     /**
      * Constructs a complete HTTP response with all components.
      * 
      * @param protocolVersion the HTTP protocol version (e.g., "HTTP/1.1")
-     * @param body the response body content
+     * @param body            the response body content
      */
     public HttpResponse(String protocolVersion, String body) {
         this.statusCode = "200 OK";
@@ -98,7 +102,7 @@ public class HttpResponse {
     /**
      * Sets a new header to headers hashmap
      *
-     * @param name the header name
+     * @param name  the header name
      * @param value the header value
      */
     public void setHeader(String name, String value) {
@@ -166,5 +170,13 @@ public class HttpResponse {
      */
     public boolean isCompressed() {
         return compressedBody != null;
+    }
+
+    public void setProperty(String name, Object value) {
+        properties.put(name, value);
+    }
+
+    public Object getProperty(String name) {
+        return properties.get(name);
     }
 }
