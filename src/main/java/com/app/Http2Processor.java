@@ -105,7 +105,7 @@ public class Http2Processor {
     }
 
     private HttpResponse processDataFrame(int streamId, int flags, ByteBuffer payload) throws IOException {
-        
+
         if (streamId == 0) {
             sendGoAway(Http2Frame.PROTOCOL_ERROR);
             return null;
@@ -121,7 +121,7 @@ public class Http2Processor {
 
         // Check flow control
         if (!connectionManager.consumeConnectionWindow(payload.remaining()) ||
-            !stream.consumeLocalWindow(payload.remaining()) {
+                !stream.consumeLocalWindow(payload.remaining())) {
             // Flow control error
             sendRstStream(streamId, Http2Stream.FLOW_CONTROL_ERROR);
             return null;
