@@ -1,9 +1,11 @@
 package com.app;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Http2Processor {
@@ -66,35 +68,41 @@ public class Http2Processor {
                 break;
 
             case Http2Frame.TYPE_HEADERS:
-                response = processDataFrame(streamId, flags, payload);
+                response = processHeadersFrame(streamId, flags, payload);
                 break;
 
             case Http2Frame.TYPE_PRIORITY:
-                response = processDataFrame(streamId, flags, payload);
+                // TODO: Handle PRIORITY frame
                 break;
 
             case Http2Frame.TYPE_RST_STREAM:
-                response = processDataFrame(streamId, flags, payload);
+                // Handle RST_STREAM frame
+                int errorCode = payload.getInt(0);
+                Http2Stream stream = connectionManager.getStream(streamId);
+                if (stream != null) {
+                    stream.resetStream(errorCode);
+                }
                 break;
 
             case Http2Frame.TYPE_SETTINGS:
-                response = processDataFrame(streamId, flags, payload);
+                // Handle SETTINGS frame
+                response = handleSettingsFrame(streamId, flags, payload);
                 break;
 
             case Http2Frame.TYPE_PING:
-                response = processDataFrame(streamId, flags, payload);
+                response = handlePingFrame(streamId, flags, payload);
                 break;
 
             case Http2Frame.TYPE_GOAWAY:
-                response = processDataFrame(streamId, flags, payload);
+                response = handleGoAwayFrame(streamId, flags, payload);
                 break;
 
             case Http2Frame.TYPE_WINDOW_UPDATE:
-                response = processDataFrame(streamId, flags, payload);
+                response = handleWindowUpdateFrame(streamId, flags, payload);
                 break;
 
             case Http2Frame.TYPE_CONTINUATION:
-                response = processDataFrame(streamId, flags, payload);
+                // TODO: Handle CONTINUATION frame (usually part of a HEADERS sequence)
                 break;
             default:
                 // Unknown frame type, ignore per spec
@@ -139,16 +147,70 @@ public class Http2Processor {
     }
 
     private HttpResponse processHeadersFrame(int streamId, int flags, ByteBuffer payload) throws IOException {
-        // Implement this method
-
-        if (endStream) {
-            return createResponse(stream);
+        if (streamId == 0) {
+            sendGoAway(Http2Frame.PROTOCOL_ERROR);
+            return null;
         }
 
+        Http2Stream stream = connectionManager.getStream(streamId);
+        boolean endStream = (flags & Http2Frame.FLAG_END_STREAM) != 0;
+        boolean endHeaders = (flags & Http2Frame.FLAG_END_HEADERS) != 0;
+
+        if (stream == null) {
+            // Create new stream
+            stream = connectionManager.createStream(streamId);
+            stream.transitionToOpen();
+        }
+
+        // Decode headers using HPACK
+        try {
+            byte[] headerBlock = new byte[payload.remaining()];
+            payload.get(headerBlock);
+
+            // TODO: Change this to proper HPACK decoding
+            ByteArrayInputStream headerInputStream = new ByteArrayInputStream(headerBlock);
+
+            HashMap<String, String> headers = new HashMap<>();
+            connectionManager.getDecoder().decode(headerInputStream, (name, value, senstive) -> {
+                String nameStr = new String(name, StandardCharsets.UTF_8);
+                String valueStr = new String(value, StandardCharsets.UTF_8);
+                headers.put(nameStr, valueStr);
+            });
+
+            stream.receiveHeaders(headers, endStream);
+
+            // If this completes a request (END_STREAM flag set), process it
+            if (endStream) {
+                return createResponse(stream);
+            }
+
+        } catch (Exception e) {
+            sendRstStream(streamId, Http2Frame.INTERNAL_ERROR);
+            System.err.println("Error processing HEADERS frame: " + e.getMessage());
+        }
         return null;
     }
 
-    // TODO: Create other frame processing methods
+    private void sendGoAway(int errorCode) throws IOException {
+        // Get last processed stream ID
+        int lastStreamId = 0;
+
+        GoAwayFrame goAwayFrame = new GoAwayFrame(lastStreamId, errorCode);
+        OutputStream outputStream = getOutputStream();
+        connectionManager.sendFrame(goAwayFrame, outputStream);
+    }
+
+    private void sendRstStream(int streamId, int errorCode) throws IOException {
+        RstStreamFrame rstStreamFrame = new RstStreamFrame(streamId, errorCode);
+        OutputStream outputStream = getOutputStream();
+        connectionManager.sendFrame(rstStreamFrame, outputStream);
+    }
+
+    private OutputStream getOutputStream() {
+        // This method should return the outputStream for the current connection
+        // TODO: Implement this method
+        return null;
+    }
 
     private HttpResponse createResponse(Http2Stream stream) {
         // Convert HTTP/2 stream to HTTP request
