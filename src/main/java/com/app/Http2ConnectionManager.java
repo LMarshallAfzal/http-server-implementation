@@ -3,7 +3,6 @@ package com.app;
 import com.twitter.hpack.Encoder;
 import com.twitter.hpack.Decoder;
 
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,8 +42,16 @@ public class Http2ConnectionManager extends ConnectionManager {
         return streams.values();
     }
 
+    public Http2Settings getLocalSettings() {
+        return localSettings;
+    }
+
     public void updateLocalSettings(Http2Settings settings) {
         localSettings.merge(settings);
+    }
+
+    public Http2Settings getRemoteSettings() {
+        return remoteSettings;
     }
 
     public void updateRemoteSettings(Http2Settings settings) {
