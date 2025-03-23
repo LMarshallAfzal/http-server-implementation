@@ -1,10 +1,6 @@
 package com.app;
 
 import com.twitter.hpack.Encoder;
-
-import jdk.internal.net.http.frame.GoAwayFrame;
-import jdk.internal.net.http.frame.SettingsFrame;
-
 import com.twitter.hpack.Decoder;
 
 import java.net.Socket;
@@ -29,10 +25,6 @@ public class Http2ConnectionManager extends ConnectionManager {
     private final Decoder decoder = new Decoder(remoteSettings.getMaxHeaderListSize(),
             remoteSettings.getHeaderTableSize());
 
-    public Http2ConnectionManager(Socket socket) {
-        super(socket);
-    }
-
     public Http2Stream getStream(int streamId) {
         return streams.get(streamId);
     }
@@ -44,7 +36,7 @@ public class Http2ConnectionManager extends ConnectionManager {
     }
 
     public void removeStream(int streamId) {
-        streams.put(streamId);
+        streams.remove(streamId);
     }
 
     public Collection<Http2Stream> getAllStreams() {
@@ -84,14 +76,13 @@ public class Http2ConnectionManager extends ConnectionManager {
         return goAwaySent;
     }
 
-    public void sendFrame(Http2Frame frame) throws IOException {
+    public void sendFrame(Http2Frame frame, OutputStream output) throws IOException {
         ByteBuffer encodedFrame = frame.encode();
 
-        OutputStream out = socket.getOutputStream();
         byte[] frameBytes = new byte[encodedFrame.remaining()];
         encodedFrame.get(frameBytes);
-        out.write(frameBytes);
-        out.flush();
+        output.write(frameBytes);
+        output.flush();
 
         if (frame instanceof SettingsFrame && !((SettingsFrame) frame).isAck()) {
             SettingsFrame settingsFrame = (SettingsFrame) frame;
@@ -111,10 +102,4 @@ public class Http2ConnectionManager extends ConnectionManager {
         return decoder;
     }
 
-    @Override
-    public void closeConnection(String connectionId) {
-        if (!goAwaySent) {
-            sendGoAway(lastStreamId, 0);
-        }
-        super.closeConnection(connectionId);
-    }
+}
