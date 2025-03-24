@@ -9,6 +9,9 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+
 import javax.net.ssl.*;
 
 /**
@@ -33,6 +36,7 @@ public class Acceptor {
     private final boolean isSecure;
     private static final int HTTP_PORT = 8080;
     private static final int HTTPS_PORT = 8443;
+    private final ConcurrentHashMap<Socket, String> protocolMap = new ConcurrentHashMap<>();
 
     /**
      * Constructs an Acceptor that listens on port 8443 (SSL/TLS) or port 8080
@@ -111,10 +115,13 @@ public class Acceptor {
                     sslSocket.close();
                     return acceptConnection();
                 }
-                socket.setProperty("protocol", "h2");
+                protocolMap.put(socket, "h2");
             } else {
                 System.out.println("HTTP/1.1 connection established");
+                protocolMap.put(socket, "http/1.1");
             }
+        } else {
+            protocolMap.put(socket, "http/1.1");
         }
         return socket;
     }
@@ -145,6 +152,14 @@ public class Acceptor {
         return true;
     }
 
+    public String getProtocol(Socket socket) {
+        return protocolMap.get(socket);
+    }
+
+    public boolean isHttp2(Socket socket) {
+        return "h2".equals(protocolMap.get(socket));
+    }
+
     /**
      * Closes the server socket and releases any associated resources.
      * 
@@ -155,5 +170,6 @@ public class Acceptor {
             System.out.println("Server socket closed!");
             serverSocket.close();
         }
+        protocolMap.clear();
     }
 }
