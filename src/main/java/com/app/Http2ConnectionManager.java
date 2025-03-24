@@ -19,6 +19,7 @@ public class Http2ConnectionManager extends ConnectionManager {
 
     private int lastStreamId = 0;
     private boolean goAwaySent = false;
+    private boolean goAwayReceived = false;
 
     private final Encoder encoder = new Encoder(remoteSettings.getHeaderTableSize());
     private final Decoder decoder = new Decoder(remoteSettings.getMaxHeaderListSize(),
@@ -83,6 +84,14 @@ public class Http2ConnectionManager extends ConnectionManager {
         return goAwaySent;
     }
 
+    public void markGoAwayReceived() {
+        goAwayReceived = true;
+    }
+
+    public boolean isGoAwayReceived() {
+        return goAwayReceived;
+    }
+
     public void sendFrame(Http2Frame frame, OutputStream output) throws IOException {
         ByteBuffer encodedFrame = frame.encode();
 
@@ -96,9 +105,7 @@ public class Http2ConnectionManager extends ConnectionManager {
             localSettings.merge(settingsFrame.getSettings());
         }
 
-        if (frame instanceof GoAwayFrame) {
-            goAwaySent = true;
-        }
+        goAwaySent = true;
     }
 
     public Encoder getEncoder() {
