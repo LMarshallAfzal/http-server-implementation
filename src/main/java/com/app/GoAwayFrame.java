@@ -26,19 +26,23 @@ class GoAwayFrame extends Http2Frame {
     }
 
     public int getLastStreamId() {
-        payload.mark();
+        // payload.mark();
+        int originalPosition = payload.position();
         payload.rewind();
         int lastStreamId = payload.getInt() & 0x7FFFFFFF; // 31-bit value
-        payload.reset();
+        payload.position(originalPosition);
+        // payload.reset();
         return lastStreamId;
     }
 
     public int getErrorCode() {
-        payload.mark();
+        // payload.mark();
+        int originalPosition = payload.position();
         payload.rewind();
         payload.getInt(); // Skip last stream ID
         int errorCode = payload.getInt();
-        payload.reset();
+        payload.position(originalPosition);
+        // payload.reset();
         return errorCode;
     }
 }

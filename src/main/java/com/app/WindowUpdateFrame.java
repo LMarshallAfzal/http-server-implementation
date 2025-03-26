@@ -25,10 +25,12 @@ class WindowUpdateFrame extends Http2Frame {
     }
 
     public int getWindowSizeIncrement() {
-        payload.mark();
+        int originalPosition = payload.position();
+        // payload.mark();
         payload.rewind();
         int increment = payload.getInt() & 0x7FFFFFFF; // 31-bit value
-        payload.reset();
+        // payload.reset();
+        payload.position(originalPosition);
         return increment;
     }
 }

@@ -25,10 +25,12 @@ class RstStreamFrame extends Http2Frame {
     }
 
     public int getErrorCode() {
-        payload.mark();
+        int originalPosition = payload.position();
+        // payload.mark();
         payload.rewind();
         int errorCode = payload.getInt();
-        payload.reset();
+        // payload.reset();
+        payload.position(originalPosition);
         return errorCode;
     }
 }
