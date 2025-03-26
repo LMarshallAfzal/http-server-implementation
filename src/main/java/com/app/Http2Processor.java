@@ -362,22 +362,24 @@ public class Http2Processor {
     }
 
     private void sendGoAway(int errorCode) throws IOException {
+        if (this.outputStream == null) {
+            System.err.println("Cannot send GOAWAY: output stream is null");
+            return;
+        }
+
         // Get last processed stream ID
         int lastStreamId = 0;
-
         GoAwayFrame goAwayFrame = new GoAwayFrame(lastStreamId, errorCode);
-        OutputStream outputStream = getOutputStream();
-        connectionManager.sendFrame(goAwayFrame, outputStream);
+        connectionManager.sendFrame(goAwayFrame, this.outputStream);
     }
 
     private void sendRstStream(int streamId, int errorCode) throws IOException {
+        if (this.outputStream == null) {
+            System.err.println("Cannot seand RST_STREAM: output stream is null");
+            return;
+        }
         RstStreamFrame rstStreamFrame = new RstStreamFrame(streamId, errorCode);
-        OutputStream outputStream = getOutputStream();
-        connectionManager.sendFrame(rstStreamFrame, outputStream);
-    }
-
-    private OutputStream getOutputStream() {
-        return null;
+        connectionManager.sendFrame(rstStreamFrame, this.outputStream);
     }
 
     private HttpResponse createResponse(Http2Stream stream) {
