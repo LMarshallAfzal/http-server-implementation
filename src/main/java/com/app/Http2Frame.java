@@ -149,22 +149,22 @@ public abstract class Http2Frame {
                 return new DataFrame(streamId, flags, payload);
             case TYPE_HEADERS:
                 return new HeadersFrame(streamId, flags, payload);
-            // case TYPE_PRIORITY:
-            // return new PriorityFrame(streamId, flags, payload);
+            case TYPE_PRIORITY:
+                return new PriorityFrame(streamId, flags, payload);
             case TYPE_RST_STREAM:
                 return new RstStreamFrame(streamId, flags, payload);
             case TYPE_SETTINGS:
                 return new SettingsFrame(streamId, flags, payload);
-            // case TYPE_PUSH_PROMISE:
-            // return new PushPromiseFrame(streamId, flags, payload);
-            // case TYPE_PING:
-            // return new PingFrame(streamId, flags, payload);
+            case TYPE_PUSH_PROMISE:
+                return new PushPromiseFrame(streamId, flags, payload);
+            case TYPE_PING:
+                return new PingFrame(streamId, flags, payload);
             case TYPE_GOAWAY:
                 return new GoAwayFrame(streamId, flags, payload);
             case TYPE_WINDOW_UPDATE:
                 return new WindowUpdateFrame(streamId, flags, payload);
-            // case TYPE_CONTINUATION:
-            // return new ContinuationFrame(streamId, flags, payload);
+            case TYPE_CONTINUATION:
+                return new ContinuationFrame(streamId, flags, payload);
             default:
                 throw new IllegalArgumentException("Unknown frame type: " + type);
         }

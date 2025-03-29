@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -229,12 +228,13 @@ public class Http2Processor {
                 }
             };
 
-//            connectionManager.getDecoder().decode(headerInputStream, (name, value, sensitive) -> {
-//                String nameStr = new String(name, StandardCharsets.UTF_8);
-//                String valueStr = new String(value, StandardCharsets.UTF_8);
-//                headers.put(nameStr, valueStr);
-//                System.out.println("Decoded header: " + nameStr + ": " + valueStr);
-//            });
+            // connectionManager.getDecoder().decode(headerInputStream, (name, value,
+            // sensitive) -> {
+            // String nameStr = new String(name, StandardCharsets.UTF_8);
+            // String valueStr = new String(value, StandardCharsets.UTF_8);
+            // headers.put(nameStr, valueStr);
+            // System.out.println("Decoded header: " + nameStr + ": " + valueStr);
+            // });
 
             int maxHeaderSize = Math.max(8192, connectionManager.getRemoteSettings().getMaxHeaderListSize());
             int maxHeaderTableSize = Math.max(4096, connectionManager.getRemoteSettings().getHeaderTableSize());
@@ -256,7 +256,7 @@ public class Http2Processor {
                     System.err.println("Failed to create response for headers frame on stream " + streamId);
                 }
                 return response;
-//                 return createResponse(stream);
+                // return createResponse(stream);
             }
 
         } catch (IOException e) {
