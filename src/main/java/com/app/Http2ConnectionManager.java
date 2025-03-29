@@ -93,19 +93,35 @@ public class Http2ConnectionManager extends ConnectionManager {
     }
 
     public void sendFrame(Http2Frame frame, OutputStream output) throws IOException {
-        ByteBuffer encodedFrame = frame.encode();
+        try {
+            dumpFrame("SENDING", frame);
 
-        byte[] frameBytes = new byte[encodedFrame.remaining()];
-        encodedFrame.get(frameBytes);
-        output.write(frameBytes);
-        output.flush();
+            ByteBuffer encodedFrame = frame.encode();
 
-        if (frame instanceof SettingsFrame && !((SettingsFrame) frame).isAck()) {
-            SettingsFrame settingsFrame = (SettingsFrame) frame;
-            localSettings.merge(settingsFrame.getSettings());
+            byte[] frameBytes = new byte[encodedFrame.remaining()];
+            encodedFrame.get(frameBytes);
+
+            System.out.println("SENDING FRAME: type=" + frame.getType() +
+                    ", stream=" + frame.getStreamId() +
+                    ", flags=" + frame.getFlags() +
+                    ", length=" + frameBytes.length);
+
+            output.write(frameBytes);
+            output.flush();
+
+            if (frame instanceof SettingsFrame && !((SettingsFrame) frame).isAck()) {
+                SettingsFrame settingsFrame = (SettingsFrame) frame;
+                localSettings.merge(settingsFrame.getSettings());
+            }
+
+            if (frame instanceof GoAwayFrame) {
+                goAwaySent = true;
+            }
+        } catch (Exception e) {
+            System.err.println("Error sending frame: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Failed to send frame", e);
         }
-
-        goAwaySent = true;
     }
 
     public Encoder getEncoder() {
@@ -114,6 +130,85 @@ public class Http2ConnectionManager extends ConnectionManager {
 
     public Decoder getDecoder() {
         return decoder;
+    }
+
+    public static void dumpFrame(String prefix, Http2Frame frame) {
+        StringBuilder sb = new StringBuilder(prefix);
+        sb.append(" Frame Type: ").append(frameTypeToString(frame.getType()));
+        sb.append(", Stream ID: ").append(frame.getStreamId());
+        sb.append(", Flags: ").append(Integer.toHexString(frame.getFlags())).append(" (");
+
+        // Decode flags
+        if ((frame.getFlags() & Http2Frame.FLAG_END_STREAM) != 0)
+            sb.append("END_STREAM ");
+        if ((frame.getFlags() & Http2Frame.FLAG_END_HEADERS) != 0)
+            sb.append("END_HEADERS ");
+        if ((frame.getFlags() & Http2Frame.FLAG_ACK) != 0)
+            sb.append("ACK ");
+        if ((frame.getFlags() & Http2Frame.FLAG_PADDED) != 0)
+            sb.append("PADDED ");
+        if ((frame.getFlags() & Http2Frame.FLAG_PRIORITY) != 0)
+            sb.append("PRIORITY ");
+        sb.append(")");
+
+        // Specific frame type details
+        if (frame instanceof HeadersFrame) {
+            sb.append(" [HEADERS] EndStream: ").append(((HeadersFrame) frame).isEndStream());
+            sb.append(", EndHeaders: ").append(((HeadersFrame) frame).isEndHeaders());
+        } else if (frame instanceof DataFrame) {
+            sb.append(" [DATA] EndStream: ").append(((DataFrame) frame).isEndStream());
+        } else if (frame instanceof SettingsFrame) {
+            sb.append(" [SETTINGS] IsAck: ").append(((SettingsFrame) frame).isAck());
+        }
+
+        // Payload info
+        ByteBuffer payload = frame.getPayload();
+        sb.append(", Payload size: ").append(payload.remaining()).append(" bytes");
+
+        // For HEADERS frames, try to decode the headers (simplified)
+        if (frame instanceof HeadersFrame && payload.remaining() > 0) {
+            sb.append("\nHeader block (hex): ");
+            byte[] data = new byte[Math.min(payload.remaining(), 50)];
+            int originalPosition = payload.position();
+            payload.get(data);
+            payload.position(originalPosition); // Reset position
+
+            for (byte b : data) {
+                sb.append(String.format("%02X ", b & 0xFF));
+            }
+            if (payload.remaining() > 50) {
+                sb.append("...");
+            }
+        }
+
+        System.out.println(sb.toString());
+    }
+
+    private static String frameTypeToString(int type) {
+        switch (type) {
+            case Http2Frame.TYPE_DATA:
+                return "DATA";
+            case Http2Frame.TYPE_HEADERS:
+                return "HEADERS";
+            case Http2Frame.TYPE_PRIORITY:
+                return "PRIORITY";
+            case Http2Frame.TYPE_RST_STREAM:
+                return "RST_STREAM";
+            case Http2Frame.TYPE_SETTINGS:
+                return "SETTINGS";
+            case Http2Frame.TYPE_PUSH_PROMISE:
+                return "PUSH_PROMISE";
+            case Http2Frame.TYPE_PING:
+                return "PING";
+            case Http2Frame.TYPE_GOAWAY:
+                return "GOAWAY";
+            case Http2Frame.TYPE_WINDOW_UPDATE:
+                return "WINDOW_UPDATE";
+            case Http2Frame.TYPE_CONTINUATION:
+                return "CONTINUATION";
+            default:
+                return "UNKNOWN";
+        }
     }
 
 }
