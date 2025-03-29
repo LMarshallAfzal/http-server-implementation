@@ -293,6 +293,58 @@ public class Http2ProcessorTest {
         }
     }
 
+    @Test
+    @DisplayName("processHeadersFrame should properly decode HPACK headers")
+    public void testProcessHeadersFrameHpackDecoding() throws Exception {
+        // Create a real HPACK encoded header block
+        // We'll use Twitter's HPACK encoder to create a valid header block
+        ByteArrayOutputStream headerBlockStream = new ByteArrayOutputStream();
+        com.twitter.hpack.Encoder encoder = new com.twitter.hpack.Encoder(4096);
+
+        // Encode some sample headers
+        encoder.encodeHeader(headerBlockStream, ":method".getBytes(), "GET".getBytes(), false);
+        encoder.encodeHeader(headerBlockStream, ":path".getBytes(), "/test".getBytes(), false);
+        encoder.encodeHeader(headerBlockStream, ":scheme".getBytes(), "https".getBytes(), false);
+        encoder.encodeHeader(headerBlockStream, ":authority".getBytes(), "example.com".getBytes(), false);
+        encoder.encodeHeader(headerBlockStream, "user-agent".getBytes(), "test-client".getBytes(), false);
+
+        byte[] headerBlock = headerBlockStream.toByteArray();
+
+        // Create a HEADERS frame with the encoded headers
+        int streamId = 1;
+        int flags = Http2Frame.FLAG_END_HEADERS | Http2Frame.FLAG_END_STREAM;
+        ByteBuffer payload = ByteBuffer.wrap(headerBlock);
+
+        // Initialize the processor with output stream
+        processor.initialise(outputStream);
+
+        // Use reflection to access the private method
+        Method processHeadersFrameMethod = Http2Processor.class.getDeclaredMethod(
+                "processHeadersFrame", int.class, int.class, ByteBuffer.class);
+        processHeadersFrameMethod.setAccessible(true);
+
+        // Call the method with our HPACK encoded headers
+        HttpResponse response = (HttpResponse) processHeadersFrameMethod.invoke(
+                processor, streamId, flags, payload);
+
+        // Get the stream that was created
+        Http2Stream stream = connectionManager.getStream(streamId);
+        assertNotNull(stream, "A stream should have been created");
+
+        // Verify the headers were decoded correctly
+        assertEquals("GET", stream.getRequestHeader(":method"), "Method header was not decoded correctly");
+        assertEquals("/test", stream.getRequestHeader(":path"), "Path header was not decoded correctly");
+        assertEquals("https", stream.getRequestHeader(":scheme"), "Scheme header was not decoded correctly");
+        assertEquals("example.com", stream.getRequestHeader(":authority"),
+                "Authority header was not decoded correctly");
+        assertEquals("test-client", stream.getRequestHeader("user-agent"),
+                "User-Agent header was not decoded correctly");
+
+        // Verify a response was created since we used END_STREAM flag
+        assertNotNull(response, "A response should be generated with END_STREAM flag");
+        assertEquals(streamId, response.getProperty("streamId"), "Response should have the stream ID set");
+    }
+
     // Helper method to get the connection window size using reflection
     private int getConnectionWindowSize() throws IOException {
         try {
