@@ -1,9 +1,14 @@
 package com.app;
 
+import com.twitter.hpack.Decoder;
+import com.twitter.hpack.HeaderListener;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -25,6 +30,7 @@ public class Http2Processor {
      * @return An HTTP response if this frame completes a request, null otherwise
      */
     public HttpResponse processNextFrame(InputStream inputStream) throws IOException {
+        System.out.println("Processing next frame...");
         // Read single frame
         ByteBuffer frameHeaderBuffer = ByteBuffer.allocate(9);
         readFully(inputStream, frameHeaderBuffer);
@@ -43,11 +49,18 @@ public class Http2Processor {
 
         // Read payload
         ByteBuffer payloadBuffer = ByteBuffer.allocate(length);
-        readFully(inputStream, payloadBuffer);
+        if (!readFully(inputStream, payloadBuffer)) {
+            throw new IOException("Unexpected end of stream while reading payload");
+        }
         payloadBuffer.flip();
 
         // Process frame based on type
-        return processFrame(type, flags, streamId, payloadBuffer);
+        System.out.println("Finished processing next frame!");
+        HttpResponse response = processFrame(type, flags, streamId, payloadBuffer);
+        if (response != null) {
+            System.out.println("Generated response for frame type " + type);
+        }
+        return response;
     }
 
     /**
@@ -64,14 +77,17 @@ public class Http2Processor {
     }
 
     private HttpResponse processFrame(int type, int flags, int streamId, ByteBuffer payload) throws IOException {
+        System.out.println("Processing frame of type " + type);
         HttpResponse response = null;
 
         switch (type) {
             case Http2Frame.TYPE_DATA:
+                System.out.println("Processing DATA frame");
                 response = processDataFrame(streamId, flags, payload);
                 break;
 
             case Http2Frame.TYPE_HEADERS:
+                System.out.println("Processing HEADERS frame");
                 response = processHeadersFrame(streamId, flags, payload);
                 break;
 
@@ -113,6 +129,13 @@ public class Http2Processor {
                 System.out.println("Ignore unknown frame type: " + type);
                 break;
         }
+
+        if (response != null) {
+            System.out.println("Frame processing generated a response");
+        } else {
+            System.out.println("Frame processing did not generate a response");
+        }
+
         return response;
     }
 
@@ -144,7 +167,15 @@ public class Http2Processor {
 
         // If this completes a request, process it and return the response
         if (endStream && stream.isHeadersReceived()) {
-            return createResponse(stream);
+            HttpResponse response = createResponse(stream);
+            if (response != null) {
+                response.setProperty("streamId", streamId);
+                System.out.println("Created response for data frame on stream " + streamId);
+            } else {
+                System.err.println("Failed to create response for headers frame on stream " + streamId);
+            }
+            return response;
+            // return createResponse(stream);
         }
 
         return null;
@@ -171,26 +202,73 @@ public class Http2Processor {
             byte[] headerBlock = new byte[payload.remaining()];
             payload.get(headerBlock);
 
+            System.out.println("Header block size: " + headerBlock.length + " bytes");
+            if (headerBlock.length > 0) {
+                System.out.print("Header block bytes (hex): ");
+                for (int i = 0; i < Math.min(headerBlock.length, 20); i++) {
+                    System.out.printf("%02X ", headerBlock[i] & 0xFF);
+                }
+                System.out.println(headerBlock.length > 20 ? "..." : "");
+            }
+
+            final HashMap<String, String> headers = new HashMap<>();
+
             ByteArrayInputStream headerInputStream = new ByteArrayInputStream(headerBlock);
 
-            HashMap<String, String> headers = new HashMap<>();
-            connectionManager.getDecoder().decode(headerInputStream, (name, value, senstive) -> {
-                String nameStr = new String(name, StandardCharsets.UTF_8);
-                String valueStr = new String(value, StandardCharsets.UTF_8);
-                headers.put(nameStr, valueStr);
-            });
+            HeaderListener listener = new HeaderListener() {
+                @Override
+                public void addHeader(byte[] name, byte[] value, boolean sensitive) {
+                    if (name != null && value != null) {
+                        String nameStr = new String(name, StandardCharsets.UTF_8);
+                        String valueStr = new String(value, StandardCharsets.UTF_8);
+                        headers.put(nameStr, valueStr);
+                        System.out.println("Decoded header: " + nameStr + ": " + valueStr);
+                    } else {
+                        System.out.println("Warning: Received null name or value in header");
+                    }
+                }
+            };
+
+//            connectionManager.getDecoder().decode(headerInputStream, (name, value, sensitive) -> {
+//                String nameStr = new String(name, StandardCharsets.UTF_8);
+//                String valueStr = new String(value, StandardCharsets.UTF_8);
+//                headers.put(nameStr, valueStr);
+//                System.out.println("Decoded header: " + nameStr + ": " + valueStr);
+//            });
+
+            int maxHeaderSize = Math.max(8192, connectionManager.getRemoteSettings().getMaxHeaderListSize());
+            int maxHeaderTableSize = Math.max(4096, connectionManager.getRemoteSettings().getHeaderTableSize());
+
+            Decoder decoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
+
+            decoder.decode(headerInputStream, listener);
+            decoder.endHeaderBlock();
 
             stream.receiveHeaders(headers, endStream);
 
             // If this completes a request (END_STREAM flag set), process it
             if (endStream) {
-                return createResponse(stream);
+                HttpResponse response = createResponse(stream);
+                if (response != null) {
+                    response.setProperty("streamId", streamId);
+                    System.out.println("Created response for headers frame on stream " + streamId);
+                } else {
+                    System.err.println("Failed to create response for headers frame on stream " + streamId);
+                }
+                return response;
+//                 return createResponse(stream);
             }
 
-        } catch (Exception e) {
-            sendRstStream(streamId, Http2Frame.INTERNAL_ERROR);
+        } catch (IOException e) {
             System.err.println("Error processing HEADERS frame: " + e.getMessage());
+            e.printStackTrace();
+            sendRstStream(streamId, Http2Frame.COMPRESSION_ERROR);
+        } catch (Exception e) {
+            System.err.println("Unexpected error in HEADERS frame: " + e.getMessage());
+            e.printStackTrace();
+            sendRstStream(streamId, Http2Frame.INTERNAL_ERROR);
         }
+
         return null;
     }
 
@@ -383,51 +461,68 @@ public class Http2Processor {
     }
 
     private HttpResponse createResponse(Http2Stream stream) {
-        // Convert HTTP/2 stream to HTTP request
-        Map<String, String> headers = stream.getRequestHeaders();
-        ByteBuffer data = stream.getData();
+        try {
+            // Convert HTTP/2 stream to HTTP request
+            Map<String, String> headers = stream.getRequestHeaders();
+            ByteBuffer data = stream.getData();
 
-        // Extract method, urlPath, etc. from headers
-        String method = headers.get(":method");
-        String urlPath = headers.get(":path");
-        String scheme = headers.get(":scheme");
-        String authority = headers.get(":authority");
+            System.out.println("Creating response for stream " + stream.getStreamId());
+            System.out.println("Request headers: " + headers);
 
-        if (method == null || urlPath == null || scheme == null) {
-            try {
-                sendRstStream(stream.getStreamId(), Http2Frame.PROTOCOL_ERROR);
-            } catch (IOException e) {
-                System.err.println("Error sending RST_STREAM: " + e.getMessage());
+            // Extract method, urlPath, etc. from headers
+            String method = headers.get(":method");
+            String urlPath = headers.get(":path");
+            String scheme = headers.get(":scheme");
+            String authority = headers.get(":authority");
+
+            if (method == null || urlPath == null || scheme == null) {
+                System.err.println("Missing required pseudo-headers");
+                try {
+                    sendRstStream(stream.getStreamId(), Http2Frame.PROTOCOL_ERROR);
+                } catch (IOException e) {
+                    System.err.println("Error sending RST_STREAM: " + e.getMessage());
+                }
+                return null;
             }
+
+            // Add headers
+            HashMap<String, String> requestHeaders = new HashMap<>();
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                String name = entry.getKey();
+                if (!name.startsWith(":")) {
+                    requestHeaders.put(name, entry.getValue());
+                }
+            }
+
+            System.out.println("HTTP/2 Request: " + method + " " + urlPath);
+
+            // Create an HttpRequest object
+            HttpRequest request = new HttpRequest(method, "HTTP/2", urlPath, requestHeaders);
+
+            // Add request body if present
+            if (data != null && data.hasRemaining()) {
+                byte[] body = new byte[data.remaining()];
+                data.get(body);
+                System.out.println("Request has body of " + body.length + " bytes");
+            }
+
+            // Process the request to get a response
+            System.out.println("Processing request...");
+            HttpResponse response = processRequest(request);
+            System.out.println("Request processed, response status: " + response.getStatusCode());
+
+            // Store the stream ID so we can reference it later
+            response.setProperty("streamId", stream.getStreamId());
+            System.out.println("Response created for stream " + stream.getStreamId());
+
+            return response;
+
+        } catch (Exception e) {
+            System.err.println("Error creating response: " + e.getMessage());
+            e.printStackTrace();
             return null;
+
         }
-
-        // Add headers
-        HashMap<String, String> requestHeaders = new HashMap<>();
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            String name = entry.getKey();
-            if (!name.startsWith(":")) {
-                requestHeaders.put(name, entry.getValue());
-            }
-        }
-
-        System.out.println("HTTP/2 Request: " + method + " " + urlPath);
-
-        // Create an HttpRequest object
-        HttpRequest request = new HttpRequest(method, "HTTP/2", urlPath, requestHeaders);
-
-        // Add request body if present
-        if (data.hasRemaining()) {
-            byte[] body = new byte[data.remaining()];
-            data.get(body);
-        }
-
-        // Process the request to get a response
-        HttpResponse response = processRequest(request);
-
-        response.setProperty("streamId", stream.getStreamId());
-
-        return response;
     }
 
     public HttpResponse processRequest(HttpRequest request) {
@@ -449,16 +544,30 @@ public class Http2Processor {
     }
 
     // Utility methods
-    private void readFully(InputStream inputStream, ByteBuffer buffer) throws IOException {
+    private boolean readFully(InputStream inputStream, ByteBuffer buffer) throws IOException {
         byte[] bytes = new byte[buffer.remaining()];
         int offset = 0;
         int length = bytes.length;
 
         while (length > 0) {
-            int read = inputStream.read(bytes, offset, length);
+            int read;
+            try {
+                read = inputStream.read(bytes, offset, length);
+            } catch (SocketException e) {
+                if ("Connection reset".equals(e.getMessage()) ||
+                        "Socket closed".equals(e.getMessage())) {
+                    // Clean connection close
+                    return false;
+                }
+                throw e;
+            }
 
             if (read == -1) {
-                throw new IOException("Connection closed unexpectedly");
+                if (offset == 0) {
+                    return false;
+                } else {
+                    throw new IOException("Connection closed unexpectedly after reading " + offset + " bytes");
+                }
             }
 
             offset += read;
@@ -466,5 +575,7 @@ public class Http2Processor {
         }
 
         buffer.put(bytes);
+        return true;
+
     }
 }
