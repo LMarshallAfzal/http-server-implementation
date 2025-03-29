@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Timeout;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 import java.io.File;
 import java.net.*;
 import java.io.IOException;
@@ -147,7 +146,8 @@ public class AcceptorTest {
 
         Thread.sleep(1000);
 
-        assertEquals(NUM_CONNECTIONS, acceptedSockets.size(), "Server should accept " + NUM_CONNECTIONS + " connections");
+        assertEquals(NUM_CONNECTIONS, acceptedSockets.size(),
+                "Server should accept " + NUM_CONNECTIONS + " connections");
 
         for (Socket socket : clientSockets) {
             socket.close();
@@ -169,8 +169,8 @@ public class AcceptorTest {
                 fail("Should not reach here because thread is interrupted");
             } catch (IOException e) {
                 assertTrue(e.getMessage().contains("accept") ||
-                                e.getMessage().contains("closed") ||
-                                e.getMessage().contains("interrupted"),
+                        e.getMessage().contains("closed") ||
+                        e.getMessage().contains("interrupted"),
                         "Exception message should indicate accept was interrupted: " + e.getMessage());
             }
         });
@@ -225,7 +225,8 @@ public class AcceptorTest {
     }
 
     @Test
-    void testClose_InterruptAcceptMethod() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    void testClose_InterruptAcceptMethod()
+            throws IOException, InterruptedException, ExecutionException, TimeoutException {
         acceptor = new Acceptor(false);
 
         Future<?> acceptFuture = executor.submit(() -> {
@@ -234,9 +235,9 @@ public class AcceptorTest {
                 fail("Should not reach here because socket is closed");
             } catch (IOException e) {
                 assertTrue(e.getMessage().contains("closed") ||
-                                     e.getMessage().contains("accept") ||
-                                     e.getMessage().contains("interrupted"),
-                                    "Exception message should indicate socket was closed: " + e.getMessage());
+                        e.getMessage().contains("accept") ||
+                        e.getMessage().contains("interrupted"),
+                        "Exception message should indicate socket was closed: " + e.getMessage());
 
             }
         });
@@ -272,4 +273,3 @@ public class AcceptorTest {
         }
     }
 }
-
