@@ -7,9 +7,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Manages client socket connections to the HTTP server.
  *
- * <p>This class provides functionality to track, add, and remove client connections
- * using a thread-safe concurrent hash map. Each connection is uniquely identified by
- * a combination of the client's IP address and port number.</p>
+ * <p>
+ * This class provides functionality to track, add, and remove client
+ * connections
+ * using a thread-safe concurrent hash map. Each connection is uniquely
+ * identified by
+ * a combination of the client's IP address and port number.
+ * </p>
  */
 public class ConnectionManager {
     private final ConcurrentHashMap<String, Socket> connectedClients = new ConcurrentHashMap<>();
@@ -18,7 +22,8 @@ public class ConnectionManager {
      * Generates a unique connection ID for a socket.
      *
      * @param socket The client socket for which to generate an ID
-     * @return A string in the format "ipv6Address:port" that uniquely identifies the connection
+     * @return A string in the format "ipv6Address:port" that uniquely identifies
+     *         the connection
      */
     private String getConnectionId(Socket socket) {
         return socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
@@ -38,7 +43,7 @@ public class ConnectionManager {
     /**
      * Adds a new client connection to the manager.
      *
-     * @param socket The client  socket to add
+     * @param socket The client socket to add
      */
     public void addConnectedClient(Socket socket) {
         String connectionId = getConnectionId(socket);
