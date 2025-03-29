@@ -1,10 +1,8 @@
 package com.app;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PushbackInputStream;
+import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -195,23 +193,54 @@ public class Server {
         try {
             while (!clientSocket.isClosed()) {
                 try {
-                    // Process next frame and get response if available
+                    System.out.println("Reading next HTTP/2 frame...");
                     HttpResponse response = processor.processNextFrame(inputStream);
 
-                    // If we have a response to send, send it on the appropriate stream
-                    if (response != null && response.getProperty("streamId") != null) {
-                        int streamId = (int) response.getProperty("streamId");
-                        Http2Stream stream = http2ConnectionManager.getStream(streamId);
-                        if (stream != null) {
-                            responder.sendResponse(response, stream, outputStream);
+                    if (response != null) {
+                        Object streamIdObj = response.getProperty("streamId");
+                        if (streamIdObj != null) {
+                            int streamId = (int) streamIdObj;
+                            Http2Stream stream = http2ConnectionManager.getStream(streamId);
+                            if (stream != null) {
+                                System.out.println("Sending HTTP/2 response for stream " + streamId);
+                                responder.sendResponse(response, stream, outputStream);
+                                System.out.println("Response sent successfully");
+                            } else {
+                                System.err.println("Stream " + streamId + " not found for sending response");
+                            }
+                        } else {
+                            System.out.println("No response to send or no stream ID");
+                        }
+                    } else {
+                        System.out.println("No response to send or no stream ID");
+                        if (http2ConnectionManager.isGoAwayReceived()) {
+                            System.out.println("GOAWAY received, ending connection");
+                            break;
                         }
                     }
                 } catch (SocketTimeoutException e) {
-                    System.out.println("HTTP/2 connection to " + clientSocket.getInetAddress().getHostName()
-                            + " timed out");
+                    System.out.println("HTTP/2 connection to " + clientSocket.getInetAddress().getHostName() + " timed out");
+                    break;
+                } catch (SocketException e) {
+                    System.out.println("Socket error: " + e.getMessage());
+                    break;
+                } catch (EOFException e) {
+                    System.out.println("EOF reached, client closed connection");
                     break;
                 } catch (IOException e) {
-                    System.out.println("IO error processing HTTP/2 frame: " + e.getMessage());
+                    if (e.getMessage() != null &&
+                            (e.getMessage().contains("Connection reset") ||
+                                    e.getMessage().contains("Socket closed") ||
+                                    e.getMessage().contains("Broken pipe"))) {
+                        System.out.println("Client closed connection: " + e.getMessage());
+                    } else {
+                        System.err.println("IO error: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                    break;
+                } catch (Exception e) {
+                    System.err.println("Unexpected error: " + e.getMessage());
+                    e.printStackTrace();
                     break;
                 }
             }
